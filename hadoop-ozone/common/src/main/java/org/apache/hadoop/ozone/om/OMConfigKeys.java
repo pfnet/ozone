@@ -703,6 +703,15 @@ public final class OMConfigKeys {
       "ozone.om.ratis.events.max.limit";
   public static final int OZONE_OM_RATIS_EVENTS_MAX_LIMIT_DEFAULT = 100;
 
+  // Rate limit listKeys in OzoneManager (req/sec)
+  public static final String OZONE_OM_LISTKEYS_RATELIMIT_KEY =
+          "ozone.om.listkeys.ratelimit";
+  public static final int OZONE_OM_LISTKEYS_RATELIMIT_DEFAULT = 0;
+
+  public static final String OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_KEY =
+          "ozone.om.listkeys.ratelimit-timeout";
+  public static final int OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_DEFAULT = 8; // seconds
+
   /**
    * Never constructed.
    */
