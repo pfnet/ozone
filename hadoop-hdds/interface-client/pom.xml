@@ -12,18 +12,15 @@
   See the License for the specific language governing permissions and
   limitations under the License. See accompanying LICENSE file.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.ozone</groupId>
     <artifactId>hdds</artifactId>
-    <version>1.2.990001</version>
+    <version>1.2.990002-SNAPSHOT</version>
   </parent>
   <artifactId>hdds-interface-client</artifactId>
-  <version>1.2.990001</version>
+  <version>1.2.990002-SNAPSHOT</version>
   <description>Apache Ozone Distributed Data Store Client interface
   </description>
   <name>Apache Ozone HDDS Client Interface</name>
@@ -130,30 +127,18 @@ https://maven.apache.org/xsd/maven-4.0.0.xsd">
             <phase>generate-sources</phase>
             <configuration>
               <tasks>
-                <replace token="com.google.protobuf"
-                         value="org.apache.ratis.thirdparty.com.google.protobuf"
-                         dir="target/generated-sources/java/org/apache/hadoop/hdds/protocol/datanode/proto">
+                <replace token="com.google.protobuf" value="org.apache.ratis.thirdparty.com.google.protobuf" dir="target/generated-sources/java/org/apache/hadoop/hdds/protocol/datanode/proto">
                 </replace>
-                <replace token="io.grpc"
-                         value="org.apache.ratis.thirdparty.io.grpc"
-                         dir="target/generated-sources/java/org/apache/hadoop/hdds/protocol/datanode/proto">
+                <replace token="io.grpc" value="org.apache.ratis.thirdparty.io.grpc" dir="target/generated-sources/java/org/apache/hadoop/hdds/protocol/datanode/proto">
                 </replace>
-                <replace token="com.google.common"
-                         value="org.apache.ratis.thirdparty.com.google.common"
-                         dir="target/generated-sources/java/org/apache/hadoop/hdds/protocol/datanode/proto">
+                <replace token="com.google.common" value="org.apache.ratis.thirdparty.com.google.common" dir="target/generated-sources/java/org/apache/hadoop/hdds/protocol/datanode/proto">
                 </replace>
-                <replace token="org.apache.hadoop.hdds.protocol.proto"
-                         value="org.apache.hadoop.hdds.protocol.proto3"
-                         dir="target/generated-sources/java/proto3/org/apache/hadoop/hdds/protocol/proto">
+                <replace token="org.apache.hadoop.hdds.protocol.proto" value="org.apache.hadoop.hdds.protocol.proto3" dir="target/generated-sources/java/proto3/org/apache/hadoop/hdds/protocol/proto">
                 </replace>
-                <replace token="com.google.protobuf"
-                         value="org.apache.hadoop.thirdparty.protobuf"
-                         dir="target/generated-sources/java/proto3/org/apache/hadoop/hdds/protocol/proto">
+                <replace token="com.google.protobuf" value="org.apache.hadoop.thirdparty.protobuf" dir="target/generated-sources/java/proto3/org/apache/hadoop/hdds/protocol/proto">
                 </replace>
-                <move file="target/generated-sources/java/proto3/org/apache/hadoop/hdds/protocol/proto"
-                      tofile="target/generated-sources/java/proto3/org/apache/hadoop/hdds/protocol/proto3"/>
-                <move file="target/generated-sources/java/proto3"
-                      tofile="target/generated-sources/java"/>
+                <move file="target/generated-sources/java/proto3/org/apache/hadoop/hdds/protocol/proto" tofile="target/generated-sources/java/proto3/org/apache/hadoop/hdds/protocol/proto3" />
+                <move file="target/generated-sources/java/proto3" tofile="target/generated-sources/java" />
               </tasks>
             </configuration>
             <goals>
