@@ -33,6 +33,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.KeyPair;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertificateException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -91,6 +92,7 @@ import org.apache.hadoop.hdds.utils.db.cache.CacheValue;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.ipc.ProtobufRpcEngine;
 import org.apache.hadoop.ipc.RPC;
+import org.apache.hadoop.ipc.RetriableException;
 import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.metrics2.util.MBeans;
 import org.apache.hadoop.ozone.OmUtils;
@@ -191,6 +193,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.protobuf.BlockingService;
 import com.google.protobuf.ProtocolMessageEnum;
 import org.apache.commons.lang3.StringUtils;
@@ -298,6 +301,8 @@ public final class OzoneManager extends ServiceRuntimeInfoImpl
   private KeyManager keyManager;
   private PrefixManagerImpl prefixManager;
   private UpgradeFinalizer<OzoneManager> upgradeFinalizer;
+  private Optional<RateLimiter> listKeysRateLimiter;
+  private Duration listKeysRateLimiterTimeout;
 
   /**
    * OM super user / admin list.
@@ -452,6 +457,23 @@ public final class OzoneManager extends ServiceRuntimeInfoImpl
     isRatisEnabled = configuration.getBoolean(
         OMConfigKeys.OZONE_OM_RATIS_ENABLE_KEY,
         OMConfigKeys.OZONE_OM_RATIS_ENABLE_DEFAULT);
+
+    int listKeysRateLimit = configuration.getInt(
+        OMConfigKeys.OZONE_OM_LISTKEYS_RATELIMIT_KEY,
+        OMConfigKeys.OZONE_OM_LISTKEYS_RATELIMIT_DEFAULT);
+    if (listKeysRateLimit > 0) {
+      listKeysRateLimiter = Optional.of(RateLimiter.create(listKeysRateLimit));
+
+      int timeout = configuration.getInt(
+              OMConfigKeys.OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_KEY,
+              OMConfigKeys.OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_DEFAULT);
+      listKeysRateLimiterTimeout = Duration.ofSeconds(timeout);
+      LOG.info("ratelimit enbled: ratelimit={}s timeout={}",
+              listKeysRateLimit, listKeysRateLimiterTimeout);
+    } else {
+      listKeysRateLimiter = Optional.absent();
+      LOG.info("ratelimit disabled: ratelimit={}", listKeysRateLimit);
+    }
 
     InetSocketAddress omNodeRpcAddr = omNodeDetails.getRpcAddress();
     omRpcAddressTxt = new Text(omNodeDetails.getRpcAddressString());
@@ -2732,6 +2754,13 @@ public final class OzoneManager extends ServiceRuntimeInfoImpl
   @Override
   public List<OmKeyInfo> listKeys(String volumeName, String bucketName,
       String startKey, String keyPrefix, int maxKeys) throws IOException {
+
+    if (listKeysRateLimiter.isPresent()) {
+      boolean ok = listKeysRateLimiter.get().tryAcquire(listKeysRateLimiterTimeout);
+      if (!ok) {
+        throw new RetriableException("Rate limit exceeded for listKeys");
+      }
+    }
 
     ResolvedBucket bucket = resolveBucketLink(Pair.of(volumeName, bucketName));
 

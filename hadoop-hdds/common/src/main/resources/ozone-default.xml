@@ -606,6 +606,32 @@
     </description>
   </property>
   <property>
+    <name>ozone.om.listkeys.ratelimit</name>
+    <value>0</value>
+    <tag>OZONE, OM, PERFORMANCE</tag>
+    <description>
+      Rate limit in listKeys in seconds. listKeys operation in OM is
+      relatively a heavy operation, especially in case many keys in a bucket
+      or in a prefix.
+
+      Should be positive to turn on this feature. Otherwise, 0 or negative
+      integer will disable rate limiting.
+    </description>
+  </property>
+  <property>
+    <name>ozone.om.listkeys.ratelimit-timeout</name>
+    <value>8</value>
+    <tag>OZONE, OM, PERFORMANCE</tag>
+    <description>
+      The duration of a wait time in seconds when a client try to enter the
+      rate-limited section of listKeys operation.
+
+      The shorter this is, the less the OM gets loaded. The longer this
+      is, the less errors clients will get. Caveat: also, making this too
+      short may cause retry storm from S3Gateway to OM.
+    </description>
+  </property>
+  <property>
     <name>ozone.metadata.dirs</name>
     <value/>
     <tag>OZONE, OM, SCM, CONTAINER, STORAGE, REQUIRED</tag>

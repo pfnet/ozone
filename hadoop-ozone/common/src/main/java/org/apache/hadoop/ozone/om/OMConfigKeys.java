@@ -282,4 +282,12 @@ public final class OMConfigKeys {
       "ozone.path.deleting.limit.per.task";
   public static final int OZONE_PATH_DELETING_LIMIT_PER_TASK_DEFAULT = 10000;
 
+  // Rate limit listKeys in OzoneManager (req/sec)
+  public static final String OZONE_OM_LISTKEYS_RATELIMIT_KEY =
+          "ozone.om.listkeys.ratelimit";
+  public static final int OZONE_OM_LISTKEYS_RATELIMIT_DEFAULT = 0;
+
+  public static final String OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_KEY =
+          "ozone.om.listkeys.ratelimit-timeout";
+  public static final int OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_DEFAULT = 8; // seconds
 }
