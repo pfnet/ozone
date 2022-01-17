@@ -405,4 +405,12 @@ public final class OMConfigKeys {
 
   public static final TimeDuration OZONE_OM_CONTAINER_LOCATION_CACHE_TTL_DEFAULT
       = TimeDuration.valueOf(360, TimeUnit.MINUTES);
+  // Rate limit listKeys in OzoneManager (req/sec)
+  public static final String OZONE_OM_LISTKEYS_RATELIMIT_KEY =
+          "ozone.om.listkeys.ratelimit";
+  public static final int OZONE_OM_LISTKEYS_RATELIMIT_DEFAULT = 0;
+
+  public static final String OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_KEY =
+          "ozone.om.listkeys.ratelimit-timeout";
+  public static final int OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_DEFAULT = 8; // seconds
 }
