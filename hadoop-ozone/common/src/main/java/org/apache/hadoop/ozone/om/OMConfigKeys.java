@@ -687,6 +687,15 @@ public final class OMConfigKeys {
       "ozone.om.hierarchical.resource.locks.hard.limit";
   public static final int OZONE_OM_HIERARCHICAL_RESOURCE_LOCKS_HARD_LIMIT_DEFAULT = 10000;
 
+  // Rate limit listKeys in OzoneManager (req/sec)
+  public static final String OZONE_OM_LISTKEYS_RATELIMIT_KEY =
+          "ozone.om.listkeys.ratelimit";
+  public static final int OZONE_OM_LISTKEYS_RATELIMIT_DEFAULT = 0;
+
+  public static final String OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_KEY =
+          "ozone.om.listkeys.ratelimit-timeout";
+  public static final int OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_DEFAULT = 8; // seconds
+
   /**
    * Never constructed.
    */
