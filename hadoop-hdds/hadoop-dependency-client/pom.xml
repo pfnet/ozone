@@ -17,10 +17,10 @@
   <parent>
     <groupId>org.apache.ozone</groupId>
     <artifactId>hdds</artifactId>
-    <version>1.2.990002</version>
+    <version>1.2.990003-SNAPSHOT</version>
   </parent>
   <artifactId>hdds-hadoop-dependency-client</artifactId>
-  <version>1.2.990002</version>
+  <version>1.2.990003-SNAPSHOT</version>
   <description>Apache Ozone Distributed Data Store Hadoop client dependencies
   </description>
   <name>Apache Ozone HDDS Hadoop Client dependencies</name>

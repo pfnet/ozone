@@ -17,10 +17,10 @@
   <parent>
     <groupId>org.apache.ozone</groupId>
     <artifactId>hdds</artifactId>
-    <version>1.2.990002</version>
+    <version>1.2.990003-SNAPSHOT</version>
   </parent>
   <artifactId>hdds-interface-admin</artifactId>
-  <version>1.2.990002</version>
+  <version>1.2.990003-SNAPSHOT</version>
   <description>Apache Ozone Distributed Data Store Admin interface
   </description>
   <name>Apache Ozone HDDS Admin Interface</name>
