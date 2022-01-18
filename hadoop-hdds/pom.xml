@@ -17,11 +17,11 @@
   <parent>
     <groupId>org.apache.ozone</groupId>
     <artifactId>ozone-main</artifactId>
-    <version>1.2.990002-SNAPSHOT</version>
+    <version>1.2.990002</version>
   </parent>
 
   <artifactId>hdds</artifactId>
-  <version>1.2.990002-SNAPSHOT</version>
+  <version>1.2.990002</version>
   <description>Apache Ozone Distributed Data Store Project</description>
   <name>Apache Ozone HDDS</name>
   <packaging>pom</packaging>

@@ -2756,7 +2756,8 @@ public final class OzoneManager extends ServiceRuntimeInfoImpl
       String startKey, String keyPrefix, int maxKeys) throws IOException {
 
     if (listKeysRateLimiter.isPresent()) {
-      boolean ok = listKeysRateLimiter.get().tryAcquire(listKeysRateLimiterTimeout);
+      boolean ok = listKeysRateLimiter.get()
+          .tryAcquire(listKeysRateLimiterTimeout);
       if (!ok) {
         throw new RetriableException("Rate limit exceeded for listKeys");
       }

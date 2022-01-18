@@ -289,5 +289,6 @@ public final class OMConfigKeys {
 
   public static final String OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_KEY =
           "ozone.om.listkeys.ratelimit-timeout";
-  public static final int OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_DEFAULT = 8; // seconds
+  public static final int OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_DEFAULT =
+          8; // seconds
 }
