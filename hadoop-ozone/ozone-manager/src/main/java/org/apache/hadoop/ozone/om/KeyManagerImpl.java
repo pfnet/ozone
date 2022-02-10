@@ -1801,7 +1801,10 @@ public class KeyManagerImpl implements KeyManager {
           return checkChildrenAcls(ozObject, context);
         }
         try {
-          OzoneFileStatus fileStatus = getFileStatus(args);
+          // As this is only used from OzoneNativeAuthorizer to check the ACL,
+          // it won't need refreshPipeline(). Thus it's using a forked version
+          // of getFileStatus(), which is used elsewhere.
+          OzoneFileStatus fileStatus = getFileStatus2(args);
           keyInfo = fileStatus.getKeyInfo();
         } catch (IOException e) {
           // OzoneFS will check whether the key exists when write a new key.
@@ -1963,6 +1966,22 @@ public class KeyManagerImpl implements KeyManager {
         args.getLatestVersionLocation(), clientAddress);
   }
 
+  public OzoneFileStatus getFileStatus2(OmKeyArgs args)
+          throws IOException {
+    Preconditions.checkNotNull(args, "Key args can not be null");
+    String volumeName = args.getVolumeName();
+    String bucketName = args.getBucketName();
+    String keyName = args.getKeyName();
+
+    if (isBucketFSOptimized(volumeName, bucketName)) {
+      return getOzoneFileStatusFSO(volumeName, bucketName, keyName,
+              args.getSortDatanodes(), null,
+              args.getLatestVersionLocation(), false);
+    }
+    return getOzoneFileStatus2(volumeName, bucketName, keyName,
+            args.getLatestVersionLocation());
+  }
+
   private OzoneFileStatus getOzoneFileStatus(String volumeName,
                                              String bucketName,
                                              String keyName,
@@ -2027,6 +2046,66 @@ public class KeyManagerImpl implements KeyManager {
             FILE_NOT_FOUND);
   }
 
+  private OzoneFileStatus getOzoneFileStatus2(String volumeName,
+                                             String bucketName,
+                                             String keyName,
+                                             boolean latestLocationVersion)
+          throws IOException {
+    OmKeyInfo fileKeyInfo = null;
+    metadataManager.getLock().acquireReadLock(BUCKET_LOCK, volumeName,
+            bucketName);
+    try {
+      // Check if this is the root of the filesystem.
+      if (keyName.length() == 0) {
+        OMFileRequest.validateBucket(metadataManager, volumeName, bucketName);
+        return new OzoneFileStatus();
+      }
+
+      // Check if the key is a file.
+      String fileKeyBytes = metadataManager.getOzoneKey(
+              volumeName, bucketName, keyName);
+      fileKeyInfo = metadataManager.getKeyTable().get(fileKeyBytes);
+
+      // Check if the key is a directory.
+      if (fileKeyInfo == null) {
+        String dirKey = OzoneFSUtils.addTrailingSlashIfNeeded(keyName);
+        String dirKeyBytes = metadataManager.getOzoneKey(
+                volumeName, bucketName, dirKey);
+        OmKeyInfo dirKeyInfo = metadataManager.getKeyTable().get(dirKeyBytes);
+        if (dirKeyInfo != null) {
+          return new OzoneFileStatus(dirKeyInfo, scmBlockSize, true);
+        }
+      }
+    } finally {
+      metadataManager.getLock().releaseReadLock(BUCKET_LOCK, volumeName,
+              bucketName);
+
+      // if the key is a file then do refresh pipeline info in OM by asking SCM
+      if (fileKeyInfo != null) {
+        if (latestLocationVersion) {
+          slimLocationVersion(fileKeyInfo);
+        }
+        // refreshPipeline flag check has been removed as part of
+        // https://issues.apache.org/jira/browse/HDDS-3658.
+        // Please refer this jira for more details.
+        // refresh(fileKeyInfo);
+        // if (sortDatanodes) {
+        //   sortDatanodes(clientAddress, fileKeyInfo);
+        //}
+        return new OzoneFileStatus(fileKeyInfo, scmBlockSize, false);
+      }
+    }
+
+    // Key is not found, throws exception
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Unable to get file status for the key: volume: {}, bucket:" +
+                      " {}, key: {}, with error: No such file exists.",
+              volumeName, bucketName, keyName);
+    }
+    throw new OMException("Unable to get file status: volume: " +
+            volumeName + " bucket: " + bucketName + " key: " + keyName,
+            FILE_NOT_FOUND);
+  }
 
   private OzoneFileStatus getOzoneFileStatusFSO(String volumeName,
       String bucketName, String keyName, boolean sortDatanodes,
