@@ -17,10 +17,10 @@
   <parent>
     <groupId>org.apache.ozone</groupId>
     <artifactId>hdds</artifactId>
-    <version>1.2.990003-SNAPSHOT</version>
+    <version>1.2.990003</version>
   </parent>
   <artifactId>hdds-hadoop-dependency-test</artifactId>
-  <version>1.2.990003-SNAPSHOT</version>
+  <version>1.2.990003</version>
   <description>Apache Ozone Distributed Data Store Hadoop test dependencies
   </description>
   <name>Apache Ozone HDDS Hadoop Test dependencies</name>
