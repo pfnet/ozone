@@ -29,6 +29,7 @@ import org.apache.hadoop.hdds.recon.ReconConfig;
 import org.apache.hadoop.hdds.scm.server.OzoneStorageContainerManager;
 import org.apache.hadoop.hdds.utils.HddsServerUtil;
 import org.apache.hadoop.ozone.OzoneSecurityUtil;
+import org.apache.hadoop.ozone.recon.metrics.ReconTaskStatusMetrics;
 import org.apache.hadoop.ozone.recon.spi.OzoneManagerServiceProvider;
 import org.apache.hadoop.ozone.recon.spi.ReconContainerMetadataManager;
 import org.apache.hadoop.ozone.recon.spi.ReconNamespaceSummaryManager;
@@ -65,6 +66,7 @@ public class ReconServer extends GenericCli {
   private ReconNamespaceSummaryManager reconNamespaceSummaryManager;
   private OzoneStorageContainerManager reconStorageContainerManager;
   private OzoneConfiguration configuration;
+  private ReconTaskStatusMetrics reconTaskStatusMetrics;
 
   private volatile boolean isStarted = false;
 
@@ -109,6 +111,8 @@ public class ReconServer extends GenericCli {
           injector.getInstance(OzoneManagerServiceProvider.class);
       this.reconStorageContainerManager =
           injector.getInstance(OzoneStorageContainerManager.class);
+      this.reconTaskStatusMetrics =
+          injector.getInstance(ReconTaskStatusMetrics.class);
       LOG.info("Recon server initialized successfully!");
 
     } catch (Exception e) {
@@ -138,6 +142,7 @@ public class ReconServer extends GenericCli {
       isStarted = true;
       // Initialize metrics for Recon
       HddsServerUtil.initializeMetrics(configuration, "Recon");
+      reconTaskStatusMetrics.register();
       if (httpServer != null) {
         httpServer.start();
       }
@@ -164,6 +169,9 @@ public class ReconServer extends GenericCli {
       }
       if (reconDBProvider != null) {
         reconDBProvider.close();
+      }
+      if (reconTaskStatusMetrics != null) {
+        reconTaskStatusMetrics.unregister();
       }
       isStarted = false;
     }
