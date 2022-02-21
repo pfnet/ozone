@@ -552,6 +552,7 @@ public final class HttpServer2 implements FilterContainer {
             StringUtils.getTrimmedStrings(excludeCiphers));
         LOG.info("Excluded Cipher List: {}", excludeCiphers);
       }
+      sslContextFactory.setProvider("Conscrypt");
 
       conn.addFirstConnectionFactory(new SslConnectionFactory(sslContextFactory,
           HttpVersion.HTTP_1_1.asString()));
