@@ -17,10 +17,10 @@
   <parent>
     <groupId>org.apache.ozone</groupId>
     <artifactId>hdds</artifactId>
-    <version>1.2.990004-SNAPSHOT</version>
+    <version>1.2.990004</version>
   </parent>
   <artifactId>hdds-container-service</artifactId>
-  <version>1.2.990004-SNAPSHOT</version>
+  <version>1.2.990004</version>
   <description>Apache Ozone Distributed Data Store Container Service</description>
   <name>Apache Ozone HDDS Container Service</name>
   <packaging>jar</packaging>
