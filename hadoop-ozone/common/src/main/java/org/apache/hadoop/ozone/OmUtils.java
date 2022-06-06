@@ -302,6 +302,7 @@ public final class OmUtils {
     case DeleteOpenKeys:
     case SetS3Secret:
     case RevokeS3Secret:
+    case PurgeDirectories:
     case PurgePaths:
     case CreateTenant:
     case DeleteTenant:
