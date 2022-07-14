@@ -19,7 +19,6 @@
 package org.apache.hadoop.ozone.upgrade;
 
 import static org.apache.hadoop.ozone.upgrade.UpgradeFinalizer.Status.ALREADY_FINALIZED;
-import static org.apache.hadoop.ozone.upgrade.UpgradeFinalizer.Status.FINALIZATION_DONE;
 import static org.apache.hadoop.ozone.upgrade.UpgradeFinalizer.Status.FINALIZATION_REQUIRED;
 
 import java.io.IOException;
@@ -49,13 +48,13 @@ public abstract class AbstractLayoutVersionManager<T extends LayoutFeature>
   private static final Logger LOG =
       LoggerFactory.getLogger(AbstractLayoutVersionManager.class);
 
-  private int metadataLayoutVersion; // MLV.
-  private int softwareLayoutVersion; // SLV.
+  private volatile int metadataLayoutVersion; // MLV.
+  private volatile int softwareLayoutVersion; // SLV.
   @VisibleForTesting
-  protected final TreeMap<Integer, T> features = new TreeMap<>();
+  protected final TreeMap<Integer, LayoutFeature> features = new TreeMap<>();
   @VisibleForTesting
-  protected final Map<String, T> featureMap = new HashMap<>();
-  private volatile Status currentUpgradeState = FINALIZATION_REQUIRED;
+  protected final Map<String, LayoutFeature> featureMap = new HashMap<>();
+  private volatile Status currentUpgradeState;
   // Allows querying upgrade state while an upgrade is in progress.
   // Note that MLV may have been incremented during the upgrade
   // by the time the value is read/used.
@@ -75,6 +74,8 @@ public abstract class AbstractLayoutVersionManager<T extends LayoutFeature>
                 metadataLayoutVersion, softwareLayoutVersion));
       } else if (metadataLayoutVersion == softwareLayoutVersion) {
         currentUpgradeState = ALREADY_FINALIZED;
+      } else {
+        currentUpgradeState = FINALIZATION_REQUIRED;
       }
 
       LayoutFeature mlvFeature = features.get(metadataLayoutVersion);
@@ -123,9 +124,13 @@ public abstract class AbstractLayoutVersionManager<T extends LayoutFeature>
     try {
       if (layoutFeature.layoutVersion() == metadataLayoutVersion + 1) {
         metadataLayoutVersion = layoutFeature.layoutVersion();
+        LOG.info("Layout feature {} has been finalized.", layoutFeature);
+        if (!needsFinalization()) {
+          LOG.info("Finalization is complete.");
+        }
       } else {
         String msgStart = "";
-        if (layoutFeature.layoutVersion() < metadataLayoutVersion) {
+        if (layoutFeature.layoutVersion() <= metadataLayoutVersion) {
           msgStart = "Finalize attempt on a layoutFeature which has already "
               + "been finalized.";
         } else {
@@ -135,18 +140,10 @@ public abstract class AbstractLayoutVersionManager<T extends LayoutFeature>
         }
 
         throw new IllegalArgumentException(
-            msgStart + "Software Layout version: " + softwareLayoutVersion
+            msgStart + " Software layout version: " + softwareLayoutVersion
+                + " Metadata layout version: " + metadataLayoutVersion
                 + " Feature Layout version: " + layoutFeature.layoutVersion());
       }
-    } finally {
-      lock.writeLock().unlock();
-    }
-  }
-
-  public void completeFinalization() {
-    lock.writeLock().lock();
-    try {
-      currentUpgradeState = FINALIZATION_DONE;
     } finally {
       lock.writeLock().unlock();
     }
@@ -203,12 +200,17 @@ public abstract class AbstractLayoutVersionManager<T extends LayoutFeature>
   }
 
   @Override
-  public T getFeature(String name) {
+  public LayoutFeature getFeature(String name) {
     return featureMap.get(name);
   }
 
   @Override
-  public Iterable<T> unfinalizedFeatures() {
+  public LayoutFeature getFeature(int layoutVersion) {
+    return features.get(layoutVersion);
+  }
+
+  @Override
+  public Iterable<LayoutFeature> unfinalizedFeatures() {
     lock.readLock().lock();
     try {
       return new ArrayList<>(features
