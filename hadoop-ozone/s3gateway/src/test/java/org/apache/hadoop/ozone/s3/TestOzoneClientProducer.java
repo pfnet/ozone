@@ -25,7 +25,6 @@ import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
-import java.io.IOException;
 
 import org.apache.hadoop.hdds.conf.OzoneConfiguration;
 import org.apache.hadoop.ozone.OzoneConfigKeys;
