@@ -25,7 +25,6 @@ import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
-import java.io.IOException;
 
 import org.apache.hadoop.hdds.conf.OzoneConfiguration;
 import org.apache.hadoop.ozone.OzoneConfigKeys;
@@ -134,39 +133,6 @@ public class TestOzoneClientProducer {
       fail("testGetClientFailure");
     } catch (Exception ex) {
       Assert.assertTrue(ex instanceof WebApplicationException);
-    }
-  }
-
-  @Test
-  public void testGetClientFailureWithMultipleServiceIds() {
-    try {
-      OzoneConfiguration configuration = new OzoneConfiguration();
-      configuration.set(OMConfigKeys.OZONE_OM_SERVICE_IDS_KEY, "ozone1,ozone2");
-      producer.setOzoneConfiguration(configuration);
-      producer.createClient();
-      fail("testGetClientFailureWithMultipleServiceIds");
-    } catch (Exception ex) {
-      Assert.assertTrue(ex instanceof IOException);
-      Assert.assertTrue(ex.getMessage().contains(
-          "More than 1 OzoneManager ServiceID"));
-    }
-  }
-
-  @Test
-  public void testGetClientFailureWithMultipleServiceIdsAndInternalServiceId() {
-    try {
-      OzoneConfiguration configuration = new OzoneConfiguration();
-      configuration.set(OMConfigKeys.OZONE_OM_INTERNAL_SERVICE_ID, "ozone1");
-      configuration.set(OMConfigKeys.OZONE_OM_SERVICE_IDS_KEY, "ozone1,ozone2");
-      producer.setOzoneConfiguration(configuration);
-      producer.createClient();
-      fail("testGetClientFailureWithMultipleServiceIdsAndInternalServiceId");
-    } catch (Exception ex) {
-      Assert.assertTrue(ex instanceof IOException);
-      // Still test will fail, as config is not complete. But it should pass
-      // the service id check.
-      Assert.assertFalse(ex.getMessage().contains(
-          "More than 1 OzoneManager ServiceID"));
     }
   }
 
