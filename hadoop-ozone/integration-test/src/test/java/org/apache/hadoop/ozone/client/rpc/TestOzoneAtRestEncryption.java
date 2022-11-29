@@ -47,6 +47,9 @@ import org.apache.hadoop.hdds.conf.OzoneConfiguration;
 import org.apache.hadoop.hdds.protocol.proto.HddsProtos;
 import org.apache.hadoop.hdds.scm.container.ContainerInfo;
 import org.apache.hadoop.hdds.scm.protocolPB.StorageContainerLocationProtocolClientSideTranslatorPB;
+import org.apache.hadoop.hdds.utils.db.Table;
+import org.apache.hadoop.hdds.utils.db.TableIterator;
+import org.apache.hadoop.hdds.utils.db.TypedTable;
 import org.apache.hadoop.ozone.MiniOzoneCluster;
 import org.apache.hadoop.ozone.OzoneConsts;
 import org.apache.hadoop.ozone.client.BucketArgs;
@@ -70,6 +73,7 @@ import org.apache.hadoop.ozone.om.helpers.OmMultipartInfo;
 import org.apache.hadoop.ozone.om.helpers.OmMultipartUploadCompleteInfo;
 import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
 import org.apache.hadoop.ozone.om.helpers.BucketLayout;
+import org.apache.hadoop.util.Time;
 import org.apache.ozone.test.GenericTestUtils;
 
 import static org.apache.hadoop.hdds.HddsConfigKeys.OZONE_METADATA_DIRS;
@@ -83,6 +87,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
+import mockit.Expectations;
 
 /**
  * This class is to test all the public facing APIs of Ozone Client.
@@ -349,30 +354,51 @@ public class TestOzoneAtRestEncryption {
     //As TDE is enabled, the TDE encryption details should not be null.
     Assert.assertNotNull(key.getFileEncryptionInfo());
 
+    OMMetadataManager omMetadataManager = ozoneManager.getMetadataManager();
+
+    // To retrieve the entry in delete table, timestamp is mocked and saved
+    long current = Time.now();
+    String expectedTimestamp = String.format("%016X", current);
+
+    new Expectations(Time.class) {
+      {
+        Time.now(); result = current;
+      }
+    };
+
     //Step 3
     bucket.deleteKey(key.getName());
 
-    OMMetadataManager omMetadataManager = ozoneManager.getMetadataManager();
-    String objectKey = omMetadataManager.getOzoneKey(volumeName, bucketName,
-        keyName);
-
     GenericTestUtils.waitFor(() -> {
       try {
-        return omMetadataManager.getDeletedTable().isExist(objectKey);
+        TableIterator<String, ? extends TypedTable.KeyValue<String,
+            RepeatedOmKeyInfo>> it = omMetadataManager.getDeletedTable()
+                .iterator();
+        while (it.hasNext()) {
+          Table.KeyValue<String, RepeatedOmKeyInfo> v = it.next();
+          String[] split = v.getKey().split("-");
+          RepeatedOmKeyInfo deletedKeys = v.getValue();
+
+          if (expectedTimestamp.equals(split[0])) {
+            Map<String, String> deletedKeyMetadata =
+                deletedKeys.getOmKeyInfoList().get(0).getMetadata();
+            Assert.assertFalse(
+                deletedKeyMetadata.containsKey(OzoneConsts.GDPR_FLAG));
+            Assert.assertFalse(
+                deletedKeyMetadata.containsKey(OzoneConsts.GDPR_SECRET));
+            Assert.assertFalse(
+                deletedKeyMetadata.containsKey(OzoneConsts.GDPR_ALGORITHM));
+            Assert.assertNull(
+                deletedKeys.getOmKeyInfoList().get(0).getFileEncryptionInfo());
+
+            return true;
+          }
+        }
+        return false;
       } catch (IOException e) {
         return false;
       }
     }, 500, 100000);
-    RepeatedOmKeyInfo deletedKeys =
-        omMetadataManager.getDeletedTable().get(objectKey);
-    Map<String, String> deletedKeyMetadata =
-        deletedKeys.getOmKeyInfoList().get(0).getMetadata();
-    Assert.assertFalse(deletedKeyMetadata.containsKey(OzoneConsts.GDPR_FLAG));
-    Assert.assertFalse(deletedKeyMetadata.containsKey(OzoneConsts.GDPR_SECRET));
-    Assert.assertFalse(
-        deletedKeyMetadata.containsKey(OzoneConsts.GDPR_ALGORITHM));
-    Assert.assertNull(
-        deletedKeys.getOmKeyInfoList().get(0).getFileEncryptionInfo());
   }
 
   private boolean verifyRatisReplication(String volumeName, String bucketName,

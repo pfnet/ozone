@@ -21,7 +21,9 @@ import org.apache.hadoop.hdds.utils.db.BatchOperation;
 import org.apache.hadoop.hdds.utils.db.Table;
 import org.apache.hadoop.ozone.om.OMMetadataManager;
 import org.apache.hadoop.ozone.om.helpers.BucketLayout;
+import org.apache.hadoop.ozone.om.helpers.OmBucketInfo;
 import org.apache.hadoop.ozone.om.helpers.OmKeyInfo;
+import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
 import org.apache.hadoop.ozone.om.response.CleanupTableInfo;
 import org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos.OMResponse;
 
@@ -41,14 +43,14 @@ import static org.apache.hadoop.ozone.om.OmMetadataManagerImpl.OPEN_KEY_TABLE;
 public class OMOpenKeysDeleteResponse extends AbstractOMKeyDeleteResponse {
 
   private Map<String, OmKeyInfo> keysToDelete;
+  private Map<String, OmBucketInfo> bucketsToUpdate;
 
   public OMOpenKeysDeleteResponse(
       @Nonnull OMResponse omResponse,
-      @Nonnull Map<String, OmKeyInfo> keysToDelete,
-      boolean isRatisEnabled,
+      @Nonnull String deleteKey, @Nonnull Map<String, OmKeyInfo> keysToDelete,
       @Nonnull BucketLayout bucketLayout) {
 
-    super(omResponse, isRatisEnabled, bucketLayout);
+    super(omResponse, deleteKey, new RepeatedOmKeyInfo(), bucketLayout);
     this.keysToDelete = keysToDelete;
   }
 
@@ -64,15 +66,29 @@ public class OMOpenKeysDeleteResponse extends AbstractOMKeyDeleteResponse {
   }
 
   @Override
+  protected String getKeyToDelete(OMMetadataManager omMetadataManager,
+      OmKeyInfo omKeyInfo) {
+    // This method will never be used, because addToDBBatch()
+    // is already implemented.
+    throw new IllegalStateException("BUG: key to delete cannot be retrieved");
+  }
+
+  @Override
   public void addToDBBatch(OMMetadataManager omMetadataManager,
       BatchOperation batchOperation) throws IOException {
 
     Table<String, OmKeyInfo> openKeyTable =
         omMetadataManager.getOpenKeyTable(getBucketLayout());
 
-    for (Map.Entry<String, OmKeyInfo> keyInfoPair : keysToDelete.entrySet()) {
-      addDeletionToBatch(omMetadataManager, batchOperation, openKeyTable,
-          keyInfoPair.getKey(), keyInfoPair.getValue());
+    for (Map.Entry<String, OmKeyInfo> entry : keysToDelete.entrySet()) {
+      openKeyTable.deleteWithBatch(batchOperation, entry.getKey());
+      if (!isKeyEmpty(entry.getValue())) {
+        getRepeatedOmKeyInfo().addOmKeyInfo(entry.getValue());
+      }
+    }
+    getRepeatedOmKeyInfo().clearGDPRdata();
+    if (!getRepeatedOmKeyInfo().getOmKeyInfoList().isEmpty()) {
+      insertToDeleteTable(omMetadataManager, batchOperation);
     }
   }
 }

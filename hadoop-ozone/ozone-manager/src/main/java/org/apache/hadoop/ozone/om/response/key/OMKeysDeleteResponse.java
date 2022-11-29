@@ -19,11 +19,11 @@
 package org.apache.hadoop.ozone.om.response.key;
 
 import org.apache.hadoop.hdds.utils.db.BatchOperation;
-import org.apache.hadoop.hdds.utils.db.Table;
 import org.apache.hadoop.ozone.om.OMMetadataManager;
 import org.apache.hadoop.ozone.om.helpers.BucketLayout;
 import org.apache.hadoop.ozone.om.helpers.OmBucketInfo;
 import org.apache.hadoop.ozone.om.helpers.OmKeyInfo;
+import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
 import org.apache.hadoop.ozone.om.response.CleanupTableInfo;
 import org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos.OMResponse;
 
@@ -42,15 +42,14 @@ import static org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos.
  */
 @CleanupTableInfo(cleanupTables = {KEY_TABLE, DELETED_TABLE, BUCKET_TABLE})
 public class OMKeysDeleteResponse extends AbstractOMKeyDeleteResponse {
-  private List<OmKeyInfo> omKeyInfoList;
   private OmBucketInfo omBucketInfo;
 
   public OMKeysDeleteResponse(@Nonnull OMResponse omResponse,
-      @Nonnull List<OmKeyInfo> keyDeleteList,
-      boolean isRatisEnabled, @Nonnull OmBucketInfo omBucketInfo) {
-    super(omResponse, isRatisEnabled);
-    this.omKeyInfoList = keyDeleteList;
+      @Nonnull String deleteKey, @Nonnull RepeatedOmKeyInfo repeatedOmKeyInfo,
+      @Nonnull OmBucketInfo omBucketInfo) {
+    super(omResponse, deleteKey, repeatedOmKeyInfo);
     this.omBucketInfo = omBucketInfo;
+    this.repeatedOmKeyInfo.clearGDPRdata();
   }
 
   /**
@@ -74,22 +73,9 @@ public class OMKeysDeleteResponse extends AbstractOMKeyDeleteResponse {
   @Override
   public void addToDBBatch(OMMetadataManager omMetadataManager,
                            BatchOperation batchOperation) throws IOException {
-    String volumeName = "";
-    String bucketName = "";
-    String keyName = "";
-    Table<String, OmKeyInfo> keyTable =
-        omMetadataManager.getKeyTable(getBucketLayout());
-    for (OmKeyInfo omKeyInfo : omKeyInfoList) {
-      volumeName = omKeyInfo.getVolumeName();
-      bucketName = omKeyInfo.getBucketName();
-      keyName = omKeyInfo.getKeyName();
 
-      String deleteKey = omMetadataManager.getOzoneKey(volumeName, bucketName,
-          keyName);
-
-      addDeletionToBatch(omMetadataManager, batchOperation, keyTable,
-          deleteKey, omKeyInfo);
-    }
+    deleteFromKeyTable(omMetadataManager, batchOperation);
+    insertToDeleteTable(omMetadataManager, batchOperation);
 
     // update bucket usedBytes.
     omMetadataManager.getBucketTable().putWithBatch(batchOperation,
@@ -98,7 +84,16 @@ public class OMKeysDeleteResponse extends AbstractOMKeyDeleteResponse {
   }
 
   public List<OmKeyInfo> getOmKeyInfoList() {
-    return omKeyInfoList;
+    return getRepeatedOmKeyInfo().getOmKeyInfoList();
+  }
+
+
+  @Override
+  protected String getKeyToDelete(OMMetadataManager omMetadataManager,
+      OmKeyInfo omKeyInfo) {
+    return omMetadataManager.getOzoneKey(
+            omKeyInfo.getVolumeName(), omKeyInfo.getBucketName(),
+            omKeyInfo.getKeyName());
   }
 
   public OmBucketInfo getOmBucketInfo() {

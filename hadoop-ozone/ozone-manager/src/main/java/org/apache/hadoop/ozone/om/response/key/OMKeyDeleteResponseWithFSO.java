@@ -19,11 +19,11 @@
 package org.apache.hadoop.ozone.om.response.key;
 
 import org.apache.hadoop.hdds.utils.db.BatchOperation;
-import org.apache.hadoop.hdds.utils.db.Table;
 import org.apache.hadoop.ozone.om.OMMetadataManager;
 import org.apache.hadoop.ozone.om.helpers.BucketLayout;
 import org.apache.hadoop.ozone.om.helpers.OmBucketInfo;
 import org.apache.hadoop.ozone.om.helpers.OmKeyInfo;
+import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
 import org.apache.hadoop.ozone.om.response.CleanupTableInfo;
 import org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos.OMResponse;
 
@@ -43,16 +43,19 @@ import static org.apache.hadoop.ozone.om.OmMetadataManagerImpl.FILE_TABLE;
     DELETED_TABLE, DELETED_DIR_TABLE, BUCKET_TABLE})
 public class OMKeyDeleteResponseWithFSO extends OMKeyDeleteResponse {
 
+  private OmKeyInfo omKeyInfo; // in case when it's a directory
   private boolean isDeleteDirectory;
   private String keyName;
   private long volumeId;
 
   @SuppressWarnings("parameternumber")
   public OMKeyDeleteResponseWithFSO(@Nonnull OMResponse omResponse,
-      @Nonnull String keyName, @Nonnull OmKeyInfo omKeyInfo,
-      boolean isRatisEnabled, @Nonnull OmBucketInfo omBucketInfo,
+      @Nonnull String keyName, @Nonnull String deleteKey, @Nonnull OmKeyInfo omKeyInfo,
+      @Nonnull OmBucketInfo omBucketInfo,
       @Nonnull boolean isDeleteDirectory, @Nonnull long volumeId) {
-    super(omResponse, omKeyInfo, isRatisEnabled, omBucketInfo);
+    super(omResponse, deleteKey, new RepeatedOmKeyInfo(omKeyInfo), omBucketInfo);
+
+    this.omKeyInfo = omKeyInfo;
     this.keyName = keyName;
     this.isDeleteDirectory = isDeleteDirectory;
     this.volumeId = volumeId;
@@ -73,37 +76,34 @@ public class OMKeyDeleteResponseWithFSO extends OMKeyDeleteResponse {
 
     // For OmResponse with failure, this should do nothing. This method is
     // not called in failure scenario in OM code.
-    String ozoneDbKey = omMetadataManager.getOzonePathKey(volumeId,
-        getOmBucketInfo().getObjectID(), getOmKeyInfo().getParentObjectID(),
-        getOmKeyInfo().getFileName());
+    String ozoneDbKey = omMetadataManager.getOzonePathKey(
+            volumeId, getOmBucketInfo().getObjectID(), omKeyInfo.getParentObjectID(), omKeyInfo.getFileName());
 
     if (isDeleteDirectory) {
       omMetadataManager.getDirectoryTable().deleteWithBatch(batchOperation,
               ozoneDbKey);
-      OmKeyInfo omKeyInfo = getOmKeyInfo();
       // Sets full absolute key name to OmKeyInfo, which is
       // required for moving the sub-files to KeyDeletionService.
       omKeyInfo.setKeyName(keyName);
       omMetadataManager.getDeletedDirTable().putWithBatch(
           batchOperation, ozoneDbKey, omKeyInfo);
     } else {
-      Table<String, OmKeyInfo> keyTable =
-          omMetadataManager.getKeyTable(getBucketLayout());
-      OmKeyInfo omKeyInfo = getOmKeyInfo();
-      // Sets full absolute key name to OmKeyInfo, which is
-      // required for moving the sub-files to KeyDeletionService.
-      omKeyInfo.setKeyName(keyName);
-      String deletedKey = omMetadataManager
-          .getOzoneKey(omKeyInfo.getVolumeName(), omKeyInfo.getBucketName(),
-              omKeyInfo.getKeyName());
-      addDeletionToBatch(omMetadataManager, batchOperation, keyTable,
-          ozoneDbKey, deletedKey, omKeyInfo);
+      // UpdateID is already set, so clearing GDPR data is enough
+      getRepeatedOmKeyInfo().clearGDPRdata();
+      deleteFromKeyTable(omMetadataManager, batchOperation);
+      insertToDeleteTable(omMetadataManager, batchOperation);
     }
 
     // update bucket usedBytes.
     omMetadataManager.getBucketTable().putWithBatch(batchOperation,
             omMetadataManager.getBucketKey(getOmBucketInfo().getVolumeName(),
                     getOmBucketInfo().getBucketName()), getOmBucketInfo());
+  }
+
+  @Override
+  protected String getKeyToDelete(OMMetadataManager omMetadataManager,
+      OmKeyInfo omKeyInfo1) {
+    return omKeyInfo1.getPath();
   }
 
   @Override

@@ -21,6 +21,7 @@ package org.apache.hadoop.ozone.om.request.key;
 import com.google.common.base.Optional;
 import org.apache.hadoop.hdds.utils.db.cache.CacheKey;
 import org.apache.hadoop.hdds.utils.db.cache.CacheValue;
+import org.apache.hadoop.ozone.OmUtils;
 import org.apache.hadoop.ozone.audit.AuditLogger;
 import org.apache.hadoop.ozone.audit.OMAction;
 import org.apache.hadoop.ozone.om.OMMetadataManager;
@@ -164,10 +165,11 @@ public class OMKeyDeleteRequestWithFSO extends OMKeyDeleteRequest {
       // be used by DeleteKeyService only, not used for any client response
       // validation, so we don't need to add to cache.
       // TODO: Revisit if we need it later.
-
+      String delKey = OmUtils.keyForDeleteTable(keyArgs.getModificationTime(),
+          trxnLogIndex);
       omClientResponse = new OMKeyDeleteResponseWithFSO(omResponse
           .setDeleteKeyResponse(DeleteKeyResponse.newBuilder()).build(),
-          keyName, omKeyInfo, ozoneManager.isRatisEnabled(),
+          keyName, delKey, omKeyInfo,
           omBucketInfo.copyObject(), keyStatus.isDirectory(), volumeId);
 
       result = Result.SUCCESS;

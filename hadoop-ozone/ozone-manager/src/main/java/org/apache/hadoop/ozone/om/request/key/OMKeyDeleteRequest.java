@@ -22,8 +22,10 @@ import java.io.IOException;
 import java.util.Map;
 
 import com.google.common.base.Optional;
+import org.apache.hadoop.ozone.OmUtils;
 import org.apache.hadoop.ozone.om.helpers.BucketLayout;
 import org.apache.hadoop.ozone.om.helpers.OmBucketInfo;
+import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
 import org.apache.hadoop.ozone.om.ratis.utils.OzoneManagerDoubleBufferHelper;
 import org.apache.hadoop.ozone.om.request.util.OmResponseUtil;
 import org.apache.hadoop.ozone.om.request.validation.RequestFeatureValidator;
@@ -96,7 +98,7 @@ public class OMKeyDeleteRequest extends OMKeyRequest {
   public OMClientResponse validateAndUpdateCache(OzoneManager ozoneManager,
       long trxnLogIndex, OzoneManagerDoubleBufferHelper omDoubleBufferHelper) {
     return validateAndUpdateCache(ozoneManager, trxnLogIndex,
-        omDoubleBufferHelper, BucketLayout.DEFAULT);
+        omDoubleBufferHelper, getBucketLayout());
   }
 
   public OMClientResponse validateAndUpdateCache(OzoneManager ozoneManager,
@@ -154,6 +156,8 @@ public class OMKeyDeleteRequest extends OMKeyRequest {
 
       // Set the UpdateID to current transactionLogIndex
       omKeyInfo.setUpdateID(trxnLogIndex, ozoneManager.isRatisEnabled());
+      RepeatedOmKeyInfo repeatedOmKeyInfo = new RepeatedOmKeyInfo(omKeyInfo);
+      repeatedOmKeyInfo.clearGDPRdata();
 
       // Update table cache.
       omMetadataManager.getKeyTable(getBucketLayout()).addCacheEntry(
@@ -171,10 +175,11 @@ public class OMKeyDeleteRequest extends OMKeyRequest {
       // be used by DeleteKeyService only, not used for any client response
       // validation, so we don't need to add to cache.
       // TODO: Revisit if we need it later.
-
+      String delKey = OmUtils.keyForDeleteTable(keyArgs.getModificationTime(),
+          trxnLogIndex);
       omClientResponse = new OMKeyDeleteResponse(
           omResponse.setDeleteKeyResponse(DeleteKeyResponse.newBuilder())
-              .build(), omKeyInfo, ozoneManager.isRatisEnabled(),
+              .build(), delKey, repeatedOmKeyInfo,
           omBucketInfo.copyObject());
 
       result = Result.SUCCESS;

@@ -18,6 +18,7 @@
 
 package org.apache.hadoop.ozone.om.response.key;
 
+import org.apache.hadoop.ozone.OmUtils;
 import org.apache.hadoop.ozone.om.helpers.OmBucketInfo;
 import org.apache.hadoop.ozone.om.helpers.OmKeyInfo;
 import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
@@ -25,6 +26,7 @@ import org.apache.hadoop.ozone.om.request.OMRequestTestUtils;
 import org.apache.hadoop.ozone.om.response.OMClientResponse;
 import org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos.DeleteKeysResponse;
 import org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos.OMResponse;
+import org.apache.hadoop.util.Time;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -81,8 +83,14 @@ public class TestOMKeysDeleteResponse extends TestOMKeyResponse {
             .setDeleteKeysResponse(DeleteKeysResponse.newBuilder()
                 .setStatus(true)).build();
 
-    OMClientResponse omKeysDeleteResponse =
-        getOmKeysDeleteResponse(omResponse, omBucketInfo);
+    OmBucketInfo omBucketInfo = OmBucketInfo.newBuilder()
+        .setVolumeName(volumeName).setBucketName(bucketName)
+        .setCreationTime(Time.now()).build();
+
+    String deleteKey = OmUtils.keyForDeleteTable(Time.now(), 360L);
+    OMClientResponse omKeysDeleteResponse = new OMKeysDeleteResponse(
+        omResponse, deleteKey, new RepeatedOmKeyInfo(omKeyInfoList),
+        omBucketInfo);
 
     omKeysDeleteResponse.checkAndUpdateDB(omMetadataManager, batchOperation);
 
@@ -90,20 +98,19 @@ public class TestOMKeysDeleteResponse extends TestOMKeyResponse {
     for (String ozKey : ozoneKeys) {
       Assert.assertNull(
           omMetadataManager.getKeyTable(getBucketLayout()).get(ozKey));
-
-      // ozKey had no block information associated with it, so it should have
-      // been removed from the key table but not added to the delete table.
-      RepeatedOmKeyInfo repeatedOmKeyInfo =
-          omMetadataManager.getDeletedTable().get(ozKey);
-      Assert.assertNull(repeatedOmKeyInfo);
     }
 
+    // deleteKey had no block information associated with it, so it should have
+    // been removed from the key table but not added to the delete table.
+    Assert.assertFalse(omMetadataManager.getDeletedTable().isExist(deleteKey));
   }
 
   protected OMClientResponse getOmKeysDeleteResponse(OMResponse omResponse,
       OmBucketInfo omBucketInfo) {
+    String deleteKey = OmUtils.keyForDeleteTable(Time.now(), 360L);
+
     return new OMKeysDeleteResponse(
-        omResponse, omKeyInfoList, true, omBucketInfo);
+        omResponse, deleteKey, new RepeatedOmKeyInfo(omKeyInfoList), omBucketInfo);
   }
 
   @Test
@@ -116,20 +123,23 @@ public class TestOMKeysDeleteResponse extends TestOMKeyResponse {
             .setDeleteKeysResponse(DeleteKeysResponse.newBuilder()
                 .setStatus(false)).build();
 
-    OMClientResponse omKeysDeleteResponse
-        = getOmKeysDeleteResponse(omResponse, omBucketInfo);
+    OmBucketInfo omBucketInfo = OmBucketInfo.newBuilder()
+        .setVolumeName(volumeName).setBucketName(bucketName)
+        .setCreationTime(Time.now()).build();
+
+    String deleteKey = OmUtils.keyForDeleteTable(Time.now(), 360L);
+    OMClientResponse omKeysDeleteResponse = new OMKeysDeleteResponse(
+        omResponse, deleteKey, new RepeatedOmKeyInfo(omKeyInfoList),
+        omBucketInfo);
 
     omKeysDeleteResponse.checkAndUpdateDB(omMetadataManager, batchOperation);
 
     for (String ozKey : ozoneKeys) {
       Assert.assertNotNull(
           omMetadataManager.getKeyTable(getBucketLayout()).get(ozKey));
-
-      RepeatedOmKeyInfo repeatedOmKeyInfo =
-          omMetadataManager.getDeletedTable().get(ozKey);
-      Assert.assertNull(repeatedOmKeyInfo);
-
     }
 
+    // On failure, deletion (insert to delete table) should not be committed.
+    Assert.assertFalse(omMetadataManager.getDeletedTable().isExist(deleteKey));
   }
 }

@@ -184,5 +184,23 @@ public class TestOmUtils {
 
     Assert.assertTrue(getOmHostsFromConfig(conf, "newId").isEmpty());
   }
+
+  @Test
+  public void testKeyForDeleteTable() {
+    // Past updateID. First half of the key is hex-encoded timestamp
+    Assert.assertEquals("0000000000000001-0000000000000000",
+        OmUtils.keyForDeleteTable(1L, 0L));
+
+    // Pre-ratis updateID
+    Assert.assertEquals("0000000000000003-0000000000000000",
+        OmUtils.keyForDeleteTable(3L, 0L));
+
+    // Post-ratis updateID
+    Assert.assertEquals("0000000000000003-0000000000000001",
+        OmUtils.keyForDeleteTable(3L, 1L));
+
+    Assert.assertEquals("0000000000000002-0000000000000144",
+        OmUtils.keyForDeleteTable(2L, 324L));
+  }
 }
 
