@@ -22,7 +22,6 @@ import org.apache.hadoop.ozone.om.OMMetadataManager;
 import org.apache.hadoop.ozone.om.helpers.BucketLayout;
 import org.apache.hadoop.ozone.om.helpers.OmBucketInfo;
 import org.apache.hadoop.ozone.om.helpers.OmKeyInfo;
-import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
 import org.apache.hadoop.ozone.om.response.CleanupTableInfo;
 import org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +52,7 @@ public class OMKeysDeleteResponseWithFSO extends OMKeysDeleteResponse {
       @NotNull List<OmKeyInfo> keyDeleteList,
       @NotNull List<OmKeyInfo> dirDeleteList,
       @NotNull OmBucketInfo omBucketInfo, @Nonnull long volId) {
-    super(omResponse, deleteKey, new RepeatedOmKeyInfo(keyDeleteList), omBucketInfo);
+    super(omResponse, deleteKey, keyDeleteList, omBucketInfo);
     this.dirsList = dirDeleteList;
     this.volumeId = volId;
   }

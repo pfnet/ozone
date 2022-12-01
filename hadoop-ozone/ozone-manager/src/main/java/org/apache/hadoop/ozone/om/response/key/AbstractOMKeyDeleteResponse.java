@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.annotation.Nonnull;
@@ -49,24 +50,24 @@ public abstract class AbstractOMKeyDeleteResponse extends OmKeyResponse {
 
   // The key in delete table, *not* in key/file table
   private String deleteKey;
-  protected RepeatedOmKeyInfo repeatedOmKeyInfo;
+  private List<OmKeyInfo> omKeyInfoList;
 
   public AbstractOMKeyDeleteResponse(
       @Nonnull OMResponse omResponse, @Nonnull String deleteKey,
-      @Nonnull RepeatedOmKeyInfo repeatedOmKeyInfo) {
+      @Nonnull List<OmKeyInfo> keysToDelete) {
 
     super(omResponse);
     this.deleteKey = deleteKey;
-    this.repeatedOmKeyInfo = repeatedOmKeyInfo;
+    this.omKeyInfoList = keysToDelete;
   }
 
   public AbstractOMKeyDeleteResponse(@Nonnull OMResponse omResponse,
       @Nonnull String deleteKey,
-      @Nonnull RepeatedOmKeyInfo repeatedOmKeyInfo, BucketLayout bucketLayout) {
+      @Nonnull List<OmKeyInfo> keysToDelete, BucketLayout bucketLayout) {
 
     super(omResponse, bucketLayout);
     this.deleteKey = deleteKey;
-    this.repeatedOmKeyInfo = repeatedOmKeyInfo;
+    this.omKeyInfoList = keysToDelete;
   }
 
   /**
@@ -97,13 +98,12 @@ public abstract class AbstractOMKeyDeleteResponse extends OmKeyResponse {
   protected void deleteFromKeyTable(
       OMMetadataManager omMetadataManager,
       BatchOperation batchOperation) throws IOException {
-    if (repeatedOmKeyInfo.getOmKeyInfoList().isEmpty()) {
+    if (omKeyInfoList.isEmpty()) {
       return;
     }
     Table<String, OmKeyInfo> keyTable =
         omMetadataManager.getKeyTable(getBucketLayout());
-    for (OmKeyInfo omKeyInfo :
-        repeatedOmKeyInfo.getOmKeyInfoList()) {
+    for (OmKeyInfo omKeyInfo : omKeyInfoList) {
       String key = getKeyToDelete(omMetadataManager, omKeyInfo);
       keyTable.deleteWithBatch(batchOperation, key);
     }
@@ -124,21 +124,26 @@ public abstract class AbstractOMKeyDeleteResponse extends OmKeyResponse {
 
     // No need to collect blocks for keys without any blocks. Filter them
     // out and don't put them into delete table.
-    RepeatedOmKeyInfo repeatedOmKeyInfoWithBlocks = new RepeatedOmKeyInfo(
-        repeatedOmKeyInfo.getOmKeyInfoList().stream().filter(
+    List<OmKeyInfo> keysToDelete = omKeyInfoList.stream().filter(
             (omKeyInfo1 -> !isKeyEmpty(omKeyInfo1))
-        ).collect(Collectors.toList()));
+        ).collect(Collectors.toList());
 
     // If all key info do not have blocks, no need to put to delete table.
-    if (repeatedOmKeyInfoWithBlocks.getOmKeyInfoList().isEmpty()) {
+    if (keysToDelete.isEmpty()) {
       return;
     }
+    RepeatedOmKeyInfo repeatedOmKeyInfo = new RepeatedOmKeyInfo(keysToDelete);
+    repeatedOmKeyInfo.clearGDPRdata();
     omMetadataManager.getDeletedTable().putWithBatch(
-        batchOperation, key, repeatedOmKeyInfoWithBlocks);
+        batchOperation, key, repeatedOmKeyInfo);
   }
 
-  protected RepeatedOmKeyInfo getRepeatedOmKeyInfo() {
-    return repeatedOmKeyInfo;
+  protected List<OmKeyInfo> getOmKeyInfoList() {
+    return omKeyInfoList;
+  }
+
+  protected void addToOmKeyInfoList(OmKeyInfo omKeyInfo) {
+    omKeyInfoList.add(omKeyInfo);
   }
   @Override
   public abstract void addToDBBatch(OMMetadataManager omMetadataManager,

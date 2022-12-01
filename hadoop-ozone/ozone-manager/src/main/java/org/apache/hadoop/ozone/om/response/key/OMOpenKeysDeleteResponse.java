@@ -21,14 +21,13 @@ import org.apache.hadoop.hdds.utils.db.BatchOperation;
 import org.apache.hadoop.hdds.utils.db.Table;
 import org.apache.hadoop.ozone.om.OMMetadataManager;
 import org.apache.hadoop.ozone.om.helpers.BucketLayout;
-import org.apache.hadoop.ozone.om.helpers.OmBucketInfo;
 import org.apache.hadoop.ozone.om.helpers.OmKeyInfo;
-import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
 import org.apache.hadoop.ozone.om.response.CleanupTableInfo;
 import org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos.OMResponse;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 
 import static org.apache.hadoop.ozone.om.OmMetadataManagerImpl.BUCKET_TABLE;
@@ -43,14 +42,13 @@ import static org.apache.hadoop.ozone.om.OmMetadataManagerImpl.OPEN_KEY_TABLE;
 public class OMOpenKeysDeleteResponse extends AbstractOMKeyDeleteResponse {
 
   private Map<String, OmKeyInfo> keysToDelete;
-  private Map<String, OmBucketInfo> bucketsToUpdate;
 
   public OMOpenKeysDeleteResponse(
       @Nonnull OMResponse omResponse,
       @Nonnull String deleteKey, @Nonnull Map<String, OmKeyInfo> keysToDelete,
       @Nonnull BucketLayout bucketLayout) {
 
-    super(omResponse, deleteKey, new RepeatedOmKeyInfo(), bucketLayout);
+    super(omResponse, deleteKey, new ArrayList<>(), bucketLayout);
     this.keysToDelete = keysToDelete;
   }
 
@@ -83,11 +81,10 @@ public class OMOpenKeysDeleteResponse extends AbstractOMKeyDeleteResponse {
     for (Map.Entry<String, OmKeyInfo> entry : keysToDelete.entrySet()) {
       openKeyTable.deleteWithBatch(batchOperation, entry.getKey());
       if (!isKeyEmpty(entry.getValue())) {
-        getRepeatedOmKeyInfo().addOmKeyInfo(entry.getValue());
+        addToOmKeyInfoList(entry.getValue());
       }
     }
-    getRepeatedOmKeyInfo().clearGDPRdata();
-    if (!getRepeatedOmKeyInfo().getOmKeyInfoList().isEmpty()) {
+    if (!getOmKeyInfoList().isEmpty()) {
       insertToDeleteTable(omMetadataManager, batchOperation);
     }
   }

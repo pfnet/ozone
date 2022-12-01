@@ -19,13 +19,13 @@
 package org.apache.hadoop.ozone.om.request.key;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 
 import com.google.common.base.Optional;
 import org.apache.hadoop.ozone.OmUtils;
 import org.apache.hadoop.ozone.om.helpers.BucketLayout;
 import org.apache.hadoop.ozone.om.helpers.OmBucketInfo;
-import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
 import org.apache.hadoop.ozone.om.ratis.utils.OzoneManagerDoubleBufferHelper;
 import org.apache.hadoop.ozone.om.request.util.OmResponseUtil;
 import org.apache.hadoop.ozone.om.request.validation.RequestFeatureValidator;
@@ -156,8 +156,6 @@ public class OMKeyDeleteRequest extends OMKeyRequest {
 
       // Set the UpdateID to current transactionLogIndex
       omKeyInfo.setUpdateID(trxnLogIndex, ozoneManager.isRatisEnabled());
-      RepeatedOmKeyInfo repeatedOmKeyInfo = new RepeatedOmKeyInfo(omKeyInfo);
-      repeatedOmKeyInfo.clearGDPRdata();
 
       // Update table cache.
       omMetadataManager.getKeyTable(getBucketLayout()).addCacheEntry(
@@ -179,7 +177,7 @@ public class OMKeyDeleteRequest extends OMKeyRequest {
           trxnLogIndex);
       omClientResponse = new OMKeyDeleteResponse(
           omResponse.setDeleteKeyResponse(DeleteKeyResponse.newBuilder())
-              .build(), delKey, repeatedOmKeyInfo,
+              .build(), delKey, Arrays.asList(omKeyInfo),
           omBucketInfo.copyObject());
 
       result = Result.SUCCESS;

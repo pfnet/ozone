@@ -22,13 +22,13 @@ import org.apache.hadoop.ozone.om.OMMetadataManager;
 import org.apache.hadoop.ozone.om.helpers.BucketLayout;
 import org.apache.hadoop.ozone.om.helpers.OmBucketInfo;
 import org.apache.hadoop.ozone.om.helpers.OmKeyInfo;
-import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
 import org.apache.hadoop.ozone.om.response.CleanupTableInfo;
 import org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos
     .OMResponse;
 import org.apache.hadoop.hdds.utils.db.BatchOperation;
 
 import java.io.IOException;
+import java.util.List;
 import javax.annotation.Nonnull;
 
 import static org.apache.hadoop.ozone.om.OmMetadataManagerImpl.BUCKET_TABLE;
@@ -45,9 +45,9 @@ public class OMKeyDeleteResponse extends AbstractOMKeyDeleteResponse {
 
   public OMKeyDeleteResponse(@Nonnull OMResponse omResponse,
       @Nonnull String deleteKey,
-      @Nonnull RepeatedOmKeyInfo repeatedOmKeyInfo,
+      @Nonnull List<OmKeyInfo> omKeyInfoList,
       @Nonnull OmBucketInfo omBucketInfo) {
-    super(omResponse, deleteKey, repeatedOmKeyInfo,
+    super(omResponse, deleteKey, omKeyInfoList,
         omBucketInfo.getBucketLayout());
     this.omBucketInfo = omBucketInfo;
   }

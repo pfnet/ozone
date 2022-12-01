@@ -26,7 +26,6 @@ import org.apache.hadoop.ozone.om.helpers.BucketLayout;
 import org.apache.hadoop.ozone.om.helpers.OmBucketInfo;
 import org.apache.hadoop.ozone.om.helpers.OmKeyInfo;
 import org.apache.hadoop.ozone.om.helpers.OzoneFileStatus;
-import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
 import org.apache.hadoop.ozone.om.ratis.utils.OzoneManagerDoubleBufferHelper;
 import org.apache.hadoop.ozone.om.request.file.OMFileRequest;
 import org.apache.hadoop.ozone.om.response.OMClientResponse;
@@ -138,7 +137,8 @@ public class OmKeysDeleteRequestWithFSO extends OMKeysDeleteRequest {
       List<OmKeyInfo> omKeyInfoList, List<OmKeyInfo> dirList,
       OzoneManagerProtocolProtos.OMResponse.Builder omResponse,
       OzoneManagerProtocolProtos.DeleteKeyArgs.Builder unDeletedKeys,
-      boolean deleteStatus, OmBucketInfo omBucketInfo, long volumeId, String deleteKey) {
+      boolean deleteStatus, OmBucketInfo omBucketInfo, long volumeId,
+      String deleteKey) {
     OMClientResponse omClientResponse;
 
     omClientResponse = new OMKeysDeleteResponseWithFSO(omResponse

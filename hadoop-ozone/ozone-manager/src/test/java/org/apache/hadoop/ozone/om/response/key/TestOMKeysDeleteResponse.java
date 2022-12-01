@@ -89,8 +89,7 @@ public class TestOMKeysDeleteResponse extends TestOMKeyResponse {
 
     String deleteKey = OmUtils.keyForDeleteTable(Time.now(), 360L);
     OMClientResponse omKeysDeleteResponse = new OMKeysDeleteResponse(
-        omResponse, deleteKey, new RepeatedOmKeyInfo(omKeyInfoList),
-        omBucketInfo);
+        omResponse, deleteKey, omKeyInfoList, omBucketInfo);
 
     omKeysDeleteResponse.checkAndUpdateDB(omMetadataManager, batchOperation);
 
@@ -109,8 +108,8 @@ public class TestOMKeysDeleteResponse extends TestOMKeyResponse {
       OmBucketInfo omBucketInfo) {
     String deleteKey = OmUtils.keyForDeleteTable(Time.now(), 360L);
 
-    return new OMKeysDeleteResponse(
-        omResponse, deleteKey, new RepeatedOmKeyInfo(omKeyInfoList), omBucketInfo);
+    return new OMKeysDeleteResponse(omResponse, deleteKey,
+        omKeyInfoList, omBucketInfo);
   }
 
   @Test
@@ -129,8 +128,7 @@ public class TestOMKeysDeleteResponse extends TestOMKeyResponse {
 
     String deleteKey = OmUtils.keyForDeleteTable(Time.now(), 360L);
     OMClientResponse omKeysDeleteResponse = new OMKeysDeleteResponse(
-        omResponse, deleteKey, new RepeatedOmKeyInfo(omKeyInfoList),
-        omBucketInfo);
+        omResponse, deleteKey,omKeyInfoList, omBucketInfo);
 
     omKeysDeleteResponse.checkAndUpdateDB(omMetadataManager, batchOperation);
 

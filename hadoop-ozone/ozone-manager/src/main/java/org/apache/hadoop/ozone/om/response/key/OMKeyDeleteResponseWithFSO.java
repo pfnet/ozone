@@ -23,12 +23,12 @@ import org.apache.hadoop.ozone.om.OMMetadataManager;
 import org.apache.hadoop.ozone.om.helpers.BucketLayout;
 import org.apache.hadoop.ozone.om.helpers.OmBucketInfo;
 import org.apache.hadoop.ozone.om.helpers.OmKeyInfo;
-import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
 import org.apache.hadoop.ozone.om.response.CleanupTableInfo;
 import org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos.OMResponse;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Arrays;
 
 import static org.apache.hadoop.ozone.om.OmMetadataManagerImpl.BUCKET_TABLE;
 import static org.apache.hadoop.ozone.om.OmMetadataManagerImpl.DELETED_DIR_TABLE;
@@ -50,10 +50,11 @@ public class OMKeyDeleteResponseWithFSO extends OMKeyDeleteResponse {
 
   @SuppressWarnings("parameternumber")
   public OMKeyDeleteResponseWithFSO(@Nonnull OMResponse omResponse,
-      @Nonnull String keyName, @Nonnull String deleteKey, @Nonnull OmKeyInfo omKeyInfo,
-      @Nonnull OmBucketInfo omBucketInfo,
+      @Nonnull String keyName, @Nonnull String deleteKey,
+      @Nonnull OmKeyInfo omKeyInfo, @Nonnull OmBucketInfo omBucketInfo,
       @Nonnull boolean isDeleteDirectory, @Nonnull long volumeId) {
-    super(omResponse, deleteKey, new RepeatedOmKeyInfo(omKeyInfo), omBucketInfo);
+    super(omResponse, deleteKey, Arrays.asList(omKeyInfo),
+        omBucketInfo);
 
     this.omKeyInfo = omKeyInfo;
     this.keyName = keyName;
@@ -77,7 +78,8 @@ public class OMKeyDeleteResponseWithFSO extends OMKeyDeleteResponse {
     // For OmResponse with failure, this should do nothing. This method is
     // not called in failure scenario in OM code.
     String ozoneDbKey = omMetadataManager.getOzonePathKey(
-            volumeId, getOmBucketInfo().getObjectID(), omKeyInfo.getParentObjectID(), omKeyInfo.getFileName());
+        volumeId, getOmBucketInfo().getObjectID(),
+        omKeyInfo.getParentObjectID(), omKeyInfo.getFileName());
 
     if (isDeleteDirectory) {
       omMetadataManager.getDirectoryTable().deleteWithBatch(batchOperation,
@@ -89,7 +91,6 @@ public class OMKeyDeleteResponseWithFSO extends OMKeyDeleteResponse {
           batchOperation, ozoneDbKey, omKeyInfo);
     } else {
       // UpdateID is already set, so clearing GDPR data is enough
-      getRepeatedOmKeyInfo().clearGDPRdata();
       deleteFromKeyTable(omMetadataManager, batchOperation);
       insertToDeleteTable(omMetadataManager, batchOperation);
     }

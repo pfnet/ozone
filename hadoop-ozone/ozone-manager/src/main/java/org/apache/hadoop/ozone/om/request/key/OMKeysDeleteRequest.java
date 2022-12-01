@@ -34,7 +34,6 @@ import org.apache.hadoop.ozone.om.helpers.BucketLayout;
 import org.apache.hadoop.ozone.om.helpers.OmBucketInfo;
 import org.apache.hadoop.ozone.om.helpers.OmKeyInfo;
 import org.apache.hadoop.ozone.om.helpers.OzoneFileStatus;
-import org.apache.hadoop.ozone.om.helpers.RepeatedOmKeyInfo;
 import org.apache.hadoop.ozone.om.ratis.utils.OzoneManagerDoubleBufferHelper;
 import org.apache.hadoop.ozone.om.request.util.OmResponseUtil;
 import org.apache.hadoop.ozone.om.request.validation.RequestFeatureValidator;
@@ -279,18 +278,16 @@ public class OMKeysDeleteRequest extends OMKeyRequest {
       List<OmKeyInfo> omKeyInfoList, List<OmKeyInfo> dirList,
       OMResponse.Builder omResponse,
       OzoneManagerProtocolProtos.DeleteKeyArgs.Builder unDeletedKeys,
-      boolean deleteStatus, OmBucketInfo omBucketInfo, long volumeId, String deleteKey) {
+      boolean deleteStatus, OmBucketInfo omBucketInfo, long volumeId,
+      String deleteKey) {
     OMClientResponse omClientResponse;
-
-    RepeatedOmKeyInfo repeatedOmKeyInfo = new RepeatedOmKeyInfo(omKeyInfoList);
-    repeatedOmKeyInfo.clearGDPRdata();
 
     omClientResponse = new OMKeysDeleteResponse(omResponse
         .setDeleteKeysResponse(
             DeleteKeysResponse.newBuilder().setStatus(deleteStatus)
                 .setUnDeletedKeys(unDeletedKeys))
         .setStatus(deleteStatus ? OK : PARTIAL_DELETE).setSuccess(deleteStatus)
-        .build(), deleteKey, repeatedOmKeyInfo, omBucketInfo.copyObject());
+        .build(), deleteKey, omKeyInfoList, omBucketInfo.copyObject());
     return omClientResponse;
   }
 
