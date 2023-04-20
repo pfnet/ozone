@@ -29,7 +29,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
+import java.util.zip.Deflater;
 
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipParameters;
 import org.apache.hadoop.hdds.HddsUtils;
 import org.apache.hadoop.ozone.OzoneConsts;
 import org.apache.hadoop.ozone.container.common.interfaces.Container;
@@ -267,8 +270,15 @@ public class TarContainerPacker
 
   private static OutputStream compress(OutputStream output)
       throws CompressorException {
-    return new CompressorStreamFactory()
-        .createCompressorOutputStream(CompressorStreamFactory.GZIP, output);
+    try {
+      GzipParameters params = new GzipParameters();
+      params.setCompressionLevel(Deflater.NO_COMPRESSION);
+      OutputStream stream = new GzipCompressorOutputStream(output, params);
+      return stream;
+    } catch (IOException e) {
+      throw new CompressorException(
+          "Could not create CompressorOutputStream", e);
+    }
   }
 
 }
