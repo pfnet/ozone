@@ -117,6 +117,9 @@ public class OzoneContainer {
   private DatanodeDetails datanodeDetails;
   private StateContext context;
 
+
+  private final ContainerMetrics metrics;
+
   enum InitializingStatus {
     UNINITIALIZED, INITIALIZING, INITIALIZED
   }
@@ -160,7 +163,7 @@ public class OzoneContainer {
     metadataScanner = null;
 
     buildContainerSet();
-    final ContainerMetrics metrics = ContainerMetrics.create(conf);
+    metrics = ContainerMetrics.create(conf);
     handlers = Maps.newHashMap();
 
     IncrementalReportSender<Container> icrSender = container -> {
@@ -500,5 +503,9 @@ public class OzoneContainer {
   @VisibleForTesting
   StorageVolumeChecker getVolumeChecker(ConfigurationSource conf) {
     return new StorageVolumeChecker(conf, new Timer());
+  }
+
+  public ContainerMetrics getMetrics() {
+    return metrics;
   }
 }
