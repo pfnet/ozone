@@ -58,6 +58,7 @@ import org.apache.hadoop.ozone.container.keyvalue.ContainerTestVersionInfo;
 import org.apache.hadoop.ozone.container.keyvalue.KeyValueContainer;
 import org.apache.hadoop.ozone.container.keyvalue.KeyValueContainerData;
 import org.apache.hadoop.ozone.container.keyvalue.helpers.BlockUtils;
+import org.apache.hadoop.ozone.container.keyvalue.helpers.KeyValueContainerUtil;
 import org.apache.hadoop.ozone.container.keyvalue.impl.BlockManagerImpl;
 import org.apache.hadoop.ozone.container.keyvalue.impl.ChunkManagerFactory;
 import org.apache.hadoop.ozone.container.keyvalue.interfaces.BlockManager;
@@ -76,6 +77,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 
 import static org.apache.hadoop.ozone.container.common.ContainerTestUtils.createDbInstancesForTestIfNeeded;
+import static org.apache.hadoop.ozone.container.keyvalue.helpers.KeyValueContainerUtil.isSameSchemaVersion;
 import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -275,7 +277,7 @@ public class TestContainerPersistence {
 
     // With schema v3, we don't have a container dedicated db,
     // so skip check the behaviors related to it.
-    if (schemaVersion.equals(OzoneConsts.SCHEMA_V3)) {
+    if (isSameSchemaVersion(schemaVersion, OzoneConsts.SCHEMA_V3)) {
       return;
     }
 

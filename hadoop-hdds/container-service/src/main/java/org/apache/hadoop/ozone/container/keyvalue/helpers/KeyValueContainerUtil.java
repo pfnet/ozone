@@ -46,6 +46,8 @@ import org.apache.hadoop.ozone.container.metadata.DatanodeStoreSchemaTwoImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.hadoop.ozone.OzoneConsts.SCHEMA_V1;
+
 /**
  * Class which defines utility methods for KeyValueContainer.
  */
@@ -104,13 +106,13 @@ public final class KeyValueContainerUtil {
     }
 
     DatanodeStore store;
-    if (schemaVersion.equals(OzoneConsts.SCHEMA_V1)) {
+    if (isSameSchemaVersion(schemaVersion, OzoneConsts.SCHEMA_V1)) {
       store = new DatanodeStoreSchemaOneImpl(conf, dbFile.getAbsolutePath(),
           false);
-    } else if (schemaVersion.equals(OzoneConsts.SCHEMA_V2)) {
+    } else if (isSameSchemaVersion(schemaVersion, OzoneConsts.SCHEMA_V2)) {
       store = new DatanodeStoreSchemaTwoImpl(conf, dbFile.getAbsolutePath(),
           false);
-    } else if (schemaVersion.equals(OzoneConsts.SCHEMA_V3)) {
+    } else if (isSameSchemaVersion(schemaVersion, OzoneConsts.SCHEMA_V3)) {
       // We don't create per-container store for schema v3 containers,
       // they should use per-volume db store.
       return;
@@ -143,7 +145,7 @@ public final class KeyValueContainerUtil {
         .getMetadataPath());
     File chunksPath = new File(containerData.getChunksPath());
 
-    if (containerData.getSchemaVersion().equals(OzoneConsts.SCHEMA_V3)) {
+    if (containerData.hasSchema(OzoneConsts.SCHEMA_V3)) {
       BlockUtils.removeContainerFromDB(containerData, conf);
     } else {
       // Close the DB connection and remove the DB handler from cache
@@ -196,12 +198,6 @@ public final class KeyValueContainerUtil {
     // Verify Checksum
     ContainerUtils.verifyChecksum(kvContainerData, config);
 
-    if (kvContainerData.getSchemaVersion() == null) {
-      // If this container has not specified a schema version, it is in the old
-      // format with one default column family.
-      kvContainerData.setSchemaVersion(OzoneConsts.SCHEMA_V1);
-    }
-
     File dbFile = KeyValueContainerLocationUtil.getContainerDBFile(
         kvContainerData);
     if (!dbFile.exists()) {
@@ -212,7 +208,7 @@ public final class KeyValueContainerUtil {
     }
     kvContainerData.setDbFile(dbFile);
 
-    if (kvContainerData.getSchemaVersion().equals(OzoneConsts.SCHEMA_V3)) {
+    if (kvContainerData.hasSchema(OzoneConsts.SCHEMA_V3)) {
       try (DBHandle db = BlockUtils.getDB(kvContainerData, config)) {
         populateContainerMetadata(kvContainerData, db.getStore());
       }
@@ -415,5 +411,11 @@ public final class KeyValueContainerUtil {
 
     return Paths.get(metadataPath);
 
+  }
+
+  public static boolean isSameSchemaVersion(String schema, String other) {
+    String effective1 = schema != null ? schema : SCHEMA_V1;
+    String effective2 = other != null ? other : SCHEMA_V1;
+    return effective1.equals(effective2);
   }
 }

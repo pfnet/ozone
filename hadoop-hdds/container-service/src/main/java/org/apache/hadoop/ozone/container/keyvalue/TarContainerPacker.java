@@ -204,7 +204,7 @@ public class TarContainerPacker
   }
 
   public static Path getDbPath(KeyValueContainerData containerData) {
-    if (containerData.getSchemaVersion().equals(SCHEMA_V3)) {
+    if (containerData.hasSchema(SCHEMA_V3)) {
       return DatanodeStoreSchemaThreeImpl.getDumpDir(
           new File(containerData.getMetadataPath())).toPath();
     } else {

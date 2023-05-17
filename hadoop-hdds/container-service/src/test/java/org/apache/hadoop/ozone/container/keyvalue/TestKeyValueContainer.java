@@ -79,6 +79,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.apache.hadoop.hdds.HddsConfigKeys.HDDS_DB_PROFILE;
+import static org.apache.hadoop.ozone.container.keyvalue.helpers.KeyValueContainerUtil.isSameSchemaVersion;
 import static org.apache.ratis.util.Preconditions.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -431,7 +432,7 @@ public class TestKeyValueContainer {
     assertFalse("Container File still exists",
         keyValueContainer.getContainerFile().exists());
 
-    if (schemaVersion.equals(OzoneConsts.SCHEMA_V3)) {
+    if (isSameSchemaVersion(schemaVersion, OzoneConsts.SCHEMA_V3)) {
       assertTrue(keyValueContainer.getContainerDBFile().exists());
     } else {
       assertFalse("Container DB file still exists",
@@ -602,7 +603,7 @@ public class TestKeyValueContainer {
     }
 
     // DBOtions should be different, except SCHEMA-V3
-    if (schemaVersion.equals(OzoneConsts.SCHEMA_V3)) {
+    if (isSameSchemaVersion(schemaVersion, OzoneConsts.SCHEMA_V3)) {
       Assert.assertEquals(
           outProfile1.getDBOptions().compactionReadaheadSize(),
           outProfile2.getDBOptions().compactionReadaheadSize());
