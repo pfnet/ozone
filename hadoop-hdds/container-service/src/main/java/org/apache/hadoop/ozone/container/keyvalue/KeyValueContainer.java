@@ -71,6 +71,7 @@ import static org.apache.hadoop.hdds.protocol.datanode.proto.ContainerProtos.Res
 import static org.apache.hadoop.hdds.protocol.datanode.proto.ContainerProtos.Result.INVALID_CONTAINER_STATE;
 import static org.apache.hadoop.hdds.protocol.datanode.proto.ContainerProtos.Result.UNSUPPORTED_REQUEST;
 import static org.apache.hadoop.ozone.container.common.utils.StorageVolumeUtil.onFailure;
+import static org.apache.hadoop.ozone.container.keyvalue.helpers.KeyValueContainerUtil.isSameSchemaVersion;
 
 import org.apache.hadoop.util.StringUtils;
 import org.slf4j.Logger;
@@ -548,7 +549,8 @@ public class KeyValueContainer implements Container<KeyValueContainerData> {
       //rewriting the yaml file with new checksum calculation.
       update(originalContainerData.getMetadata(), true);
 
-      if (containerData.getSchemaVersion().equals(OzoneConsts.SCHEMA_V3)) {
+      if (isSameSchemaVersion(containerData.getSchemaVersion(),
+          OzoneConsts.SCHEMA_V3)) {
         // load metadata from received dump files before we try to parse kv
         BlockUtils.loadKVContainerDataFromFiles(containerData, config);
       }
