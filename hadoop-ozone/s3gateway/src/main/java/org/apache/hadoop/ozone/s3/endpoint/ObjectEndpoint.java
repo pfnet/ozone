@@ -48,9 +48,10 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalLong;
 
 import org.apache.commons.lang3.StringUtils;
@@ -174,6 +175,12 @@ public class ObjectEndpoint extends EndpointBase {
       @QueryParam("partNumber")  int partNumber,
       @QueryParam("uploadId") @DefaultValue("") String uploadID,
       InputStream body) throws IOException, OS3Exception {
+
+    // Check if the S3Gateway status is readonly
+    Optional<Response> checkResult = checkIfReadonly();
+    if (checkResult.isPresent()) {
+      return checkResult.get();
+    }
 
     S3GAction s3GAction = S3GAction.CREATE_KEY;
     boolean auditSuccess = true;
@@ -527,6 +534,12 @@ public class ObjectEndpoint extends EndpointBase {
       @QueryParam("uploadId") @DefaultValue("") String uploadId) throws
       IOException, OS3Exception {
 
+    // Check if the S3Gateway status is readonly
+    Optional<Response> checkResult = checkIfReadonly();
+    if (checkResult.isPresent()) {
+      return checkResult.get();
+    }
+
     S3GAction s3GAction = S3GAction.DELETE_KEY;
 
     try {
@@ -591,6 +604,13 @@ public class ObjectEndpoint extends EndpointBase {
       @PathParam("path") String key
   )
       throws IOException, OS3Exception {
+
+    // Check if the S3Gateway status is readonly
+    Optional<Response> checkResult = checkIfReadonly();
+    if (checkResult.isPresent()) {
+      return checkResult.get();
+    }
+
     S3GAction s3GAction = S3GAction.INIT_MULTIPART_UPLOAD;
 
     try {
@@ -658,6 +678,13 @@ public class ObjectEndpoint extends EndpointBase {
       @QueryParam("uploadId") @DefaultValue("") String uploadID,
       CompleteMultipartUploadRequest multipartUploadRequest)
       throws IOException, OS3Exception {
+
+    // Check if the S3Gateway status is readonly
+    Optional<Response> checkResult = checkIfReadonly();
+    if (checkResult.isPresent()) {
+      return checkResult.get();
+    }
+
     S3GAction s3GAction = S3GAction.COMPLETE_MULTIPART_UPLOAD;
     OzoneVolume volume = getVolume();
     // Using LinkedHashMap to preserve ordering of parts list.
