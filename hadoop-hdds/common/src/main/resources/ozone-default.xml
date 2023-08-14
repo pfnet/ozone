@@ -1760,7 +1760,7 @@
   <property>
     <name>ozone.s3g.readonly</name>
     <value>false</value>
-    <tag>OZONE, S3GATEWAY/tag>
+    <tag>OZONE, S3GATEWAY</tag>
     <description>Whether the S3Gateway blocks PUT/POST/DELETE methods or not.
       Mostly used for system maintenance.</description>
   </property>

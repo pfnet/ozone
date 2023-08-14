@@ -41,6 +41,7 @@ import picocli.CommandLine.Command;
 import static org.apache.hadoop.ozone.conf.OzoneServiceConfig.DEFAULT_SHUTDOWN_HOOK_PRIORITY;
 import static org.apache.hadoop.ozone.s3.S3GatewayConfigKeys.OZONE_S3G_KERBEROS_KEYTAB_FILE_KEY;
 import static org.apache.hadoop.ozone.s3.S3GatewayConfigKeys.OZONE_S3G_KERBEROS_PRINCIPAL_KEY;
+import static org.apache.hadoop.ozone.s3.S3GatewayConfigKeys.OZONE_S3G_READONLY;
 
 /**
  * This class is used to start/stop S3 compatible rest server.
@@ -92,6 +93,8 @@ public class Gateway extends GenericCli {
 
     LOG.info("Starting Ozone S3 gateway");
     HddsServerUtil.initializeMetrics(ozoneConfiguration, "S3Gateway");
+    LOG.info("S3 Gateway Readonly mode: {}={}", OZONE_S3G_READONLY,
+            ozoneConfiguration.get(OZONE_S3G_READONLY));
     httpServer.start();
   }
 
