@@ -92,11 +92,19 @@ public class OzoneClient implements Closeable {
   @VisibleForTesting
   protected OzoneClient(ObjectStore objectStore,
                         ClientProtocol clientProtocol) {
+    this(objectStore, clientProtocol, new OzoneConfiguration());
+  }
+
+  @VisibleForTesting
+  protected OzoneClient(ObjectStore objectStore,
+                        ClientProtocol clientProtocol,
+                        OzoneConfiguration conf) {
     this.objectStore = objectStore;
     this.proxy = clientProtocol;
     // For the unit test
-    this.conf = new OzoneConfiguration();
+    this.conf = conf;
   }
+
   /**
    * Returns the object store associated with the Ozone Cluster.
    * @return ObjectStore

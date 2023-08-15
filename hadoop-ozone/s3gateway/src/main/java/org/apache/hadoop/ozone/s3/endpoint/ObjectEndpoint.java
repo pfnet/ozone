@@ -44,6 +44,20 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 import javax.xml.bind.DatatypeConverter;
 import org.apache.commons.io.IOUtils;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalLong;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.hdds.client.ECReplicationConfig;
@@ -218,6 +232,13 @@ public class ObjectEndpoint extends EndpointBase {
       @QueryParam("uploadId") @DefaultValue("") String uploadID,
       InputStream body) throws IOException, OS3Exception {
     long startNanos = Time.monotonicNowNanos();
+
+    // Check if the S3Gateway status is readonly
+    Optional<Response> checkResult = checkIfReadonly();
+    if (checkResult.isPresent()) {
+      return checkResult.get();
+    }
+
     S3GAction s3GAction = S3GAction.CREATE_KEY;
     boolean auditSuccess = true;
     PerformanceStringBuilder perf = new PerformanceStringBuilder();
@@ -664,6 +685,13 @@ public class ObjectEndpoint extends EndpointBase {
       @QueryParam("uploadId") @DefaultValue("") String uploadId) throws
       IOException, OS3Exception {
     long startNanos = Time.monotonicNowNanos();
+
+    // Check if the S3Gateway status is readonly
+    Optional<Response> checkResult = checkIfReadonly();
+    if (checkResult.isPresent()) {
+      return checkResult.get();
+    }
+
     S3GAction s3GAction = S3GAction.DELETE_KEY;
 
     try {
@@ -729,6 +757,13 @@ public class ObjectEndpoint extends EndpointBase {
   )
       throws IOException, OS3Exception {
     long startNanos = Time.monotonicNowNanos();
+
+    // Check if the S3Gateway status is readonly
+    Optional<Response> checkResult = checkIfReadonly();
+    if (checkResult.isPresent()) {
+      return checkResult.get();
+    }
+
     S3GAction s3GAction = S3GAction.INIT_MULTIPART_UPLOAD;
 
     try {
@@ -797,6 +832,13 @@ public class ObjectEndpoint extends EndpointBase {
       CompleteMultipartUploadRequest multipartUploadRequest)
       throws IOException, OS3Exception {
     long startNanos = Time.monotonicNowNanos();
+
+    // Check if the S3Gateway status is readonly
+    Optional<Response> checkResult = checkIfReadonly();
+    if (checkResult.isPresent()) {
+      return checkResult.get();
+    }
+
     S3GAction s3GAction = S3GAction.COMPLETE_MULTIPART_UPLOAD;
     OzoneVolume volume = getVolume();
     // Using LinkedHashMap to preserve ordering of parts list.
