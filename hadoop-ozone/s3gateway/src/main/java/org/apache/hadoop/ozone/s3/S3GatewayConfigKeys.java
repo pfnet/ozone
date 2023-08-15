@@ -64,7 +64,8 @@ public final class S3GatewayConfigKeys {
   public static final String OZONE_S3G_KERBEROS_PRINCIPAL_KEY =
       "ozone.s3g.kerberos.principal";
 
-
+  public static final String OZONE_S3G_READONLY = "ozone.s3g.readonly";
+  public static final boolean OZONE_S3G_READONLY_DEFAULT = false;
   /**
    * Never constructed.
    */

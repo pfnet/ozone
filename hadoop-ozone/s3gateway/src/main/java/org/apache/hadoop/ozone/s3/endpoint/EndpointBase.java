@@ -24,14 +24,15 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import java.io.IOException;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Arrays;
-import java.util.Map;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -51,6 +52,7 @@ import org.apache.hadoop.ozone.client.protocol.ClientProtocol;
 import org.apache.hadoop.ozone.om.exceptions.OMException;
 import org.apache.hadoop.ozone.om.exceptions.OMException.ResultCodes;
 import org.apache.hadoop.ozone.om.protocol.S3Auth;
+import org.apache.hadoop.ozone.s3.S3GatewayConfigKeys;
 import org.apache.hadoop.ozone.s3.exception.OS3Exception;
 import org.apache.hadoop.ozone.s3.exception.S3ErrorTable;
 
@@ -58,6 +60,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 import org.apache.hadoop.ozone.s3.metrics.S3GatewayMetrics;
 import org.apache.hadoop.ozone.s3.util.AuditUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -380,4 +383,14 @@ public abstract class EndpointBase implements Auditor {
         || result == ResultCodes.INVALID_TOKEN;
   }
 
+  protected Optional<Response> checkIfReadonly() {
+    // Check if the S3Gateway is in read-only mode or not.
+    if (getClient().getConfiguration().getBoolean(
+        S3GatewayConfigKeys.OZONE_S3G_READONLY,
+        S3GatewayConfigKeys.OZONE_S3G_READONLY_DEFAULT)) {
+      return Optional.of(Response.status(HttpStatus.SC_METHOD_NOT_ALLOWED).
+          header("Allow", "GET,HEAD").build());
+    }
+    return Optional.empty();
+  }
 }
