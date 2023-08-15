@@ -385,10 +385,11 @@ public abstract class EndpointBase implements Auditor {
 
   protected Optional<Response> checkIfReadonly() {
     // Check if the S3Gateway is in read-only mode or not.
-    if (getClient().getConfiguration().getBoolean(S3GatewayConfigKeys.OZONE_S3G_READONLY,
-            S3GatewayConfigKeys.OZONE_S3G_READONLY_DEFAULT)) {
+    if (getClient().getConfiguration().getBoolean(
+        S3GatewayConfigKeys.OZONE_S3G_READONLY,
+        S3GatewayConfigKeys.OZONE_S3G_READONLY_DEFAULT)) {
       return Optional.of(Response.status(HttpStatus.SC_METHOD_NOT_ALLOWED).
-              header("Allow", "GET,HEAD").build());
+          header("Allow", "GET,HEAD").build());
     }
     return Optional.empty();
   }

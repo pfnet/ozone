@@ -19,6 +19,8 @@
  */
 package org.apache.hadoop.ozone.client;
 
+import org.apache.hadoop.hdds.conf.OzoneConfiguration;
+
 /**
  * In-memory OzoneClient for testing.
  */
@@ -29,6 +31,11 @@ public class OzoneClientStub extends OzoneClient {
 
   public OzoneClientStub(ObjectStoreStub objectStoreStub) {
     super(objectStoreStub, new ClientProtocolStub(objectStoreStub));
+  }
+
+  public OzoneClientStub(ObjectStoreStub objectStoreStub,
+                         OzoneConfiguration conf) {
+    super(objectStoreStub, new ClientProtocolStub(objectStoreStub), conf);
   }
 
   @Override
