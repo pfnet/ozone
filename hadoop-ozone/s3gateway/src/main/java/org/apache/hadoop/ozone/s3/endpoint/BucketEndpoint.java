@@ -69,6 +69,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.apache.hadoop.ozone.OzoneConsts.ETAG;
@@ -294,6 +295,12 @@ public class BucketEndpoint extends EndpointBase {
     long startNanos = Time.monotonicNowNanos();
     S3GAction s3GAction = S3GAction.CREATE_BUCKET;
 
+    // Check if the S3Gateway status is readonly
+    Optional<Response> checkResult = checkIfReadonly();
+    if (checkResult.isPresent()) {
+      return checkResult.get();
+    }
+
     try {
       if (aclMarker != null) {
         s3GAction = S3GAction.PUT_ACL;
@@ -401,6 +408,12 @@ public class BucketEndpoint extends EndpointBase {
     long startNanos = Time.monotonicNowNanos();
     S3GAction s3GAction = S3GAction.DELETE_BUCKET;
 
+    // Check if the S3Gateway status is readonly
+    Optional<Response> checkResult = checkIfReadonly();
+    if (checkResult.isPresent()) {
+      return checkResult.get();
+    }
+
     try {
       deleteS3Bucket(bucketName);
     } catch (OMException ex) {
@@ -444,9 +457,17 @@ public class BucketEndpoint extends EndpointBase {
                                          MultiDeleteRequest request)
       throws OS3Exception, IOException {
     S3GAction s3GAction = S3GAction.MULTI_DELETE;
+    MultiDeleteResponse result = new MultiDeleteResponse();
+
+    // Check if the S3Gateway status is readonly
+    Optional<Response> checkResult = checkIfReadonly();
+    if (checkResult.isPresent()) {
+      Response res = checkResult.get();
+      result.addError(new Error("", res.getStatusInfo().getReasonPhrase(),
+              "The S3Gateway is in read-only mode."));
+    }
 
     OzoneBucket bucket = getBucket(bucketName);
-    MultiDeleteResponse result = new MultiDeleteResponse();
     List<String> deleteKeys = new ArrayList<>();
 
     if (request.getObjects() != null) {

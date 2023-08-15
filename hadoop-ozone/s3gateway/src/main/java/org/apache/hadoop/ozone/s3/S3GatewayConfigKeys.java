@@ -81,6 +81,8 @@ public final class S3GatewayConfigKeys {
   public static final boolean OZONE_S3G_LIST_KEYS_SHALLOW_ENABLED_DEFAULT =
       true;
 
+  public static final String OZONE_S3G_READONLY = "ozone.s3g.readonly";
+  public static final boolean OZONE_S3G_READONLY_DEFAULT = false;
   /**
    * Never constructed.
    */
