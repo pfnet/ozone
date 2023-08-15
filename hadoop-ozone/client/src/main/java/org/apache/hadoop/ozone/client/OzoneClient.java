@@ -94,6 +94,7 @@ public class OzoneClient implements Closeable {
                         ClientProtocol clientProtocol) {
     this(objectStore, clientProtocol, new OzoneConfiguration());
   }
+
   @VisibleForTesting
   protected OzoneClient(ObjectStore objectStore,
                         ClientProtocol clientProtocol,
