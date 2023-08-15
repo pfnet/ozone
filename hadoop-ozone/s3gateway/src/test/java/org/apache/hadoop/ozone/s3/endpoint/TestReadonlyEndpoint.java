@@ -82,7 +82,7 @@ public class TestReadonlyEndpoint {
 
     OzoneBucket bucket = clientStub.getObjectStore().getS3Bucket(bucketName);
     OzoneOutputStream keyStream =
-              bucket.createKey("key1", CONTENT.getBytes(UTF_8).length);
+        bucket.createKey("key1", CONTENT.getBytes(UTF_8).length);
     keyStream.write(CONTENT.getBytes(UTF_8));
     keyStream.close();
 
@@ -94,7 +94,7 @@ public class TestReadonlyEndpoint {
     context = Mockito.mock(ContainerRequestContext.class);
     Mockito.when(context.getUriInfo()).thenReturn(Mockito.mock(UriInfo.class));
     Mockito.when(context.getUriInfo().getQueryParameters())
-            .thenReturn(new MultivaluedHashMap<>());
+        .thenReturn(new MultivaluedHashMap<>());
     objectEndpoint.setContext(context);
 
     bucketEndpoint = new BucketEndpoint();
@@ -108,7 +108,7 @@ public class TestReadonlyEndpoint {
         .length(), 1, null, body);
 
     Assert.assertEquals(Status.METHOD_NOT_ALLOWED.getStatusCode(),
-            response.getStatus());
+        response.getStatus());
   }
 
   // Get should succeed
@@ -116,7 +116,7 @@ public class TestReadonlyEndpoint {
   public void get() throws IOException, OS3Exception {
     //WHEN
     Response response = objectEndpoint.get(bucketName, "key1",
-            null, 0, null, body);
+        null, 0, null, body);
 
     //THEN
     OzoneInputStream ozoneInputStream =
@@ -127,10 +127,10 @@ public class TestReadonlyEndpoint {
 
     Assert.assertEquals(CONTENT, keyContent);
     Assert.assertEquals("" + keyContent.length(),
-            response.getHeaderString("Content-Length"));
+        response.getHeaderString("Content-Length"));
 
     DateTimeFormatter.RFC_1123_DATE_TIME
-            .parse(response.getHeaderString("Last-Modified"));
+        .parse(response.getHeaderString("Last-Modified"));
   }
 
   // Copy is also treated as write
@@ -142,14 +142,14 @@ public class TestReadonlyEndpoint {
     Response response = objectEndpoint.put(bucketName, keyName,
         CONTENT.length(), 1, null, body);
     Assert.assertEquals(Status.METHOD_NOT_ALLOWED.getStatusCode(),
-            response.getStatus());
+        response.getStatus());
   }
 
   @Test
   public void testDelete() throws IOException, OS3Exception {
     //GIVEN
     OzoneBucket bucket =
-            clientStub.getObjectStore().getS3Bucket("b1");
+        clientStub.getObjectStore().getS3Bucket("b1");
 
     bucket.createKey("key1", 0).close();
 
@@ -158,22 +158,31 @@ public class TestReadonlyEndpoint {
 
     //THEN
     Assert.assertEquals(Status.METHOD_NOT_ALLOWED.getStatusCode(),
-            response.getStatus());
+        response.getStatus());
   }
 
   @Test
   public void testBucketPut() throws IOException, OS3Exception {
     Response response = bucketEndpoint.put(bucketName, null, null, null);
     Assert.assertEquals(Status.METHOD_NOT_ALLOWED.getStatusCode(),
-            response.getStatus());
+        response.getStatus());
   }
 
   @Test
   public void listDir() throws OS3Exception, IOException {
     Response response =
-            bucketEndpoint.get(bucketName, "/", null, null, 100,
+        bucketEndpoint.get(bucketName, "/", null, null, 100,
                     "dir1", null, null, null, null, null);
 
     Assert.assertEquals(Status.OK.getStatusCode(), response.getStatus());
+  }
+
+  @Test
+  public void testInitiateMultipartUpload() throws Exception {
+    Response response = objectEndpoint.initializeMultipartUpload(bucketName,
+        keyName);
+
+    Assert.assertEquals(Status.METHOD_NOT_ALLOWED.getStatusCode(),
+            response.getStatus());
   }
 }
