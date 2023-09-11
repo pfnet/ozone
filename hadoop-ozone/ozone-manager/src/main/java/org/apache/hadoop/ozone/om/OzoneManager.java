@@ -407,6 +407,8 @@ public final class OzoneManager extends ServiceRuntimeInfoImpl
   private ExecutorService edekCacheLoader = null;
   private Optional<RateLimiter> listKeysRateLimiter;
   private Duration listKeysRateLimiterTimeout;
+  private Optional<RateLimiter> listStatusRateLimiter;
+  private Duration listStatusRateLimiterTimeout;
 
   /**
    * OM super user / admin list.
@@ -598,6 +600,24 @@ public final class OzoneManager extends ServiceRuntimeInfoImpl
     } else {
       listKeysRateLimiter = Optional.empty();
       LOG.info("ratelimit disabled: ratelimit={}", listKeysRateLimit);
+    }
+
+    // Ratelimit for listStatus
+    int listStatusRateLimit = configuration.getInt(
+            OMConfigKeys.OZONE_OM_LISTSTATUS_RATELIMIT_KEY,
+            OMConfigKeys.OZONE_OM_LISTSTATUS_RATELIMIT_DEFAULT);
+    if (listStatusRateLimit > 0) {
+      listStatusRateLimiter = Optional.of(RateLimiter.create(listStatusRateLimit));
+
+      int timeout = configuration.getInt(
+              OMConfigKeys.OZONE_OM_LISTSTATUS_RATELIMIT_TIMEOUT_KEY,
+              OMConfigKeys.OZONE_OM_LISTSTATUS_RATELIMIT_TIMEOUT_DEFAULT);
+      listStatusRateLimiterTimeout = Duration.ofSeconds(timeout);
+      LOG.info("ratelimit enbled: ratelimit={}s timeout={}",
+              listStatusRateLimit, listStatusRateLimiterTimeout);
+    } else {
+      listStatusRateLimiter = Optional.empty();
+      LOG.info("ratelimit disabled: ratelimit={}", listStatusRateLimit);
     }
 
     this.isStrictS3 = conf.getBoolean(
@@ -3960,6 +3980,13 @@ public final class OzoneManager extends ServiceRuntimeInfoImpl
   public List<OzoneFileStatus> listStatus(OmKeyArgs args, boolean recursive,
       String startKey, long numEntries, boolean allowPartialPrefixes)
       throws IOException {
+    if (listStatusRateLimiter.isPresent()) {
+      boolean ok = listStatusRateLimiter.get().tryAcquire(listStatusRateLimiterTimeout);
+      if (!ok) {
+        throw new RetriableException("Rate limit exceeded for listStatus");
+      }
+    }
+
     try (UncheckedAutoCloseableSupplier<IOmMetadataReader> rcReader =
         getReader(args)) {
       return rcReader.get().listStatus(
