@@ -603,4 +603,13 @@ public final class OMConfigKeys {
   public static final String OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_KEY =
           "ozone.om.listkeys.ratelimit-timeout";
   public static final int OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_DEFAULT = 8; // seconds
+
+  // Rate limit listStatus in OzoneManager (req/sec)
+  public static final String OZONE_OM_LISTSTATUS_RATELIMIT_KEY =
+          "ozone.om.liststatus.ratelimit";
+  public static final int OZONE_OM_LISTSTATUS_RATELIMIT_DEFAULT = 0;
+
+  public static final String OZONE_OM_LISTSTATUS_RATELIMIT_TIMEOUT_KEY =
+          "ozone.om.liststatus.ratelimit-timeout";
+  public static final int OZONE_OM_LISTSTATUS_RATELIMIT_TIMEOUT_DEFAULT = 8; // seconds
 }
