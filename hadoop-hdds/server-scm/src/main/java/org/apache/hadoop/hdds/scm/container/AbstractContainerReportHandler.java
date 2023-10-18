@@ -337,7 +337,26 @@ public class AbstractContainerReportHandler {
       /*
        * The container is deleted. delete the replica.
        */
-      deleteReplica(containerId, datanode, publisher, "DELETED");
+      /**
+       * Note: (╯°□°）╯︵ ┻━┻
+       * We identified that the data loss was caused here by SCM in issue
+       * 1180. We are not sure why the container is marked as DELETED even
+       * though there are still some active blocks there (moreover, why the
+       * hell the blocks in the container was deleted?). Current hypothesis
+       * is that the container was somehow directly marked eligible for
+       * deletion by LegacyReplicationManager. As a workaround, we'll keep
+       * *ALL* direct deletion of containers on hold, until we get new
+       * modern replication manager in 1.4.0.
+       * The downside of this workaround would be we'll get no container
+       * deletion, but that's not that important - because we'll be able
+       * to reclaim disk space without it; blocks will be deleted by
+       * deletion services by online deletion. The benefit of avoiding
+       * data loss is much more important.
+       * We'll be monitoring this log ................
+       */
+      logger.warn("deleteReplica(container={}, dn={}, publisher={}",
+              containerId, datanode, publisher);
+      // deleteReplica(containerId, datanode, publisher, "DELETED");
       ignored = true;
       break;
     default:
