@@ -17,14 +17,20 @@
  */
 package org.apache.hadoop.ozone.shell.keys;
 
+import org.apache.hadoop.ozone.OzoneConsts;
+import org.apache.hadoop.ozone.client.OzoneBucket;
 import org.apache.hadoop.ozone.client.OzoneClient;
+import org.apache.hadoop.ozone.client.OzoneKey;
 import org.apache.hadoop.ozone.security.acl.OzoneObj;
+import org.apache.hadoop.ozone.security.acl.OzoneObjInfo;
 import org.apache.hadoop.ozone.shell.OzoneAddress;
 import org.apache.hadoop.ozone.shell.acl.AclHandler;
 import org.apache.hadoop.ozone.shell.acl.AclOption;
+import org.apache.hadoop.ozone.shell.prefix.PrefixUri;
 import picocli.CommandLine;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 /**
  * Add ACL to key.
@@ -39,6 +45,12 @@ public class AddAclKeyHandler extends AclHandler {
   @CommandLine.Mixin
   private AclOption acls;
 
+  @CommandLine.Option(
+      names = {"-p", "--prefix"},
+      description = "Do the operation for given prefix recursively"
+  )
+  private PrefixUri prefix;
+
   @Override
   protected OzoneAddress getAddress() {
     return address.getValue();
@@ -46,7 +58,28 @@ public class AddAclKeyHandler extends AclHandler {
 
   @Override
   protected void execute(OzoneClient client, OzoneObj obj) throws IOException {
-    acls.addTo(obj, client.getObjectStore(), out());
+    if (this.prefix == null) {
+      acls.addTo(obj, client.getObjectStore(), out());
+    } else {
+      String prevKey = null;
+      OzoneBucket bucket = client.getObjectStore()
+          .getS3Bucket(this.prefix.getValue().getBucketName());
+      Iterator<? extends OzoneKey> keyIter =
+          bucket.listKeys(obj.getPrefixName(),
+              OzoneConsts.OZONE_URI_DELIMITER, prevKey);
+      while (keyIter.hasNext()) {
+        OzoneKey next = keyIter.next();
+        OzoneObj ozoneObj = OzoneObjInfo.Builder.newBuilder()
+            .setBucketName(next.getBucketName())
+            .setVolumeName(next.getVolumeName())
+            .setKeyName(next.getVolumeName())
+            .setResType(OzoneObj.ResourceType.KEY)
+            .setStoreType(OzoneObj.StoreType.OZONE)
+            .build();
+        out().println(ozoneObj);
+        //acls.addTo(ozoneObj, client.getObjectStore(), out());
+      }
+    }
   }
 
 }

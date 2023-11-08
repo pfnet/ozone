@@ -30,7 +30,7 @@ public class KeyUri implements CommandLine.ITypeConverter<OzoneAddress> {
   private static final String OZONE_KEY_URI_DESCRIPTION =
       "URI of the volume/bucket/key.\n" + Shell.OZONE_URI_DESCRIPTION;
 
-  @CommandLine.Parameters(index = "0", arity = "1..1",
+  @CommandLine.Parameters(index = "0", arity = "0..1",
       description = OZONE_KEY_URI_DESCRIPTION,
       converter = KeyUri.class)
   private OzoneAddress value;
