@@ -76,16 +76,16 @@ public class AddAclKeyHandler extends AclHandler {
             .setResType(OzoneObj.ResourceType.KEY)
             .setStoreType(OzoneObj.StoreType.OZONE)
             .build();
-        out().println(ozoneObj);
         try {
           acls.addTo(ozoneObj, client.getObjectStore(), out());
         } catch (IOException e) {
-          out().println(e.getMessage());
+          out().printf("%s: %s", next.getName(), e.getMessage());
           error += 1;
         }
         success += 1;
       }
-      out().printf("%d key changes have completed (%d errors)\n", success, error);
+      out().printf("%d key changes completed (%d errors) in %d seconds.\n", success, error,
+              (System.nanoTime() - startAt) / 1000 / 1000 / 1000);
     }
   }
 
