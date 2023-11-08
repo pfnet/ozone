@@ -45,10 +45,7 @@ public class AddAclKeyHandler extends AclHandler {
   @CommandLine.Mixin
   private AclOption acls;
 
-  @CommandLine.Option(
-      names = {"-p", "--prefix"},
-      description = "Do the operation for given prefix recursively"
-  )
+  @CommandLine.Mixin
   private PrefixUri prefix;
 
   @Override
@@ -66,19 +63,29 @@ public class AddAclKeyHandler extends AclHandler {
           .getS3Bucket(this.prefix.getValue().getBucketName());
       Iterator<? extends OzoneKey> keyIter =
           bucket.listKeys(obj.getPrefixName(),
-              OzoneConsts.OZONE_URI_DELIMITER, prevKey);
+              "", prevKey);
+      long startAt = System.nanoTime();
+      long success = 0;
+      long error = 0;
       while (keyIter.hasNext()) {
         OzoneKey next = keyIter.next();
         OzoneObj ozoneObj = OzoneObjInfo.Builder.newBuilder()
             .setBucketName(next.getBucketName())
             .setVolumeName(next.getVolumeName())
-            .setKeyName(next.getVolumeName())
+            .setKeyName(next.getName())
             .setResType(OzoneObj.ResourceType.KEY)
             .setStoreType(OzoneObj.StoreType.OZONE)
             .build();
         out().println(ozoneObj);
-        //acls.addTo(ozoneObj, client.getObjectStore(), out());
+        try {
+          acls.addTo(ozoneObj, client.getObjectStore(), out());
+        } catch (IOException e) {
+          out().println(e.getMessage());
+          error += 1;
+        }
+        success += 1;
       }
+      out().printf("%d key changes have completed (%d errors)\n", success, error);
     }
   }
 
