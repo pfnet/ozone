@@ -87,8 +87,7 @@ Setup secure v4 headers
     END
 
     ${accessKey} =      Get Regexp Matches         ${result}     (?<=awsAccessKey=).*
-    # Use a valid user that are created in the Docket image Ex: testuser if it is not a secure cluster
-    ${accessKey} =      Get Variable Value         ${accessKey}  testuser
+    ${accessKey} =      Get Variable Value         ${accessKey}  sdsdasaasdasd
     ${secret} =         Get Regexp Matches         ${result}     (?<=awsSecret=).*
     ${accessKey} =      Set Variable               ${accessKey[0]}
     ${secret} =         Set Variable               ${secret[0]}
