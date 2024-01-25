@@ -422,4 +422,9 @@ public final class OMConfigKeys {
   public static final String OZONE_OM_LISTSTATUS_RATELIMIT_TIMEOUT_KEY =
           "ozone.om.liststatus.ratelimit-timeout";
   public static final int OZONE_OM_LISTSTATUS_RATELIMIT_TIMEOUT_DEFAULT = 8; // seconds
+
+  // Limit for child entries on Ozone ACL check
+  public static final String OZONE_OM_ACL_CHECK_MAX_CHILDREN =
+          "ozone.om.acls.max-children";
+  public static final int OZONE_OM_ACL_CHECK_MAX_CHILDREN_DEFAULT = 300; // entries
 }
