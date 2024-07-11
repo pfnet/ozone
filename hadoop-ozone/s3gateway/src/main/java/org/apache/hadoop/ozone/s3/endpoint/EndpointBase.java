@@ -412,7 +412,7 @@ public abstract class EndpointBase implements Auditor {
       }
       // case (d, e, f, g, h)
       return Optional.of(Response.status(HttpStatus.SC_METHOD_NOT_ALLOWED).
-        header("Allow", "GET,HEAD").build());
+          header("Allow", "GET,HEAD").build());
     }
     // case (a, b, c)
     return Optional.empty();
