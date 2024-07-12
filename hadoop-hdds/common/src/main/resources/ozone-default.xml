@@ -1792,6 +1792,14 @@
   </property>
 
   <property>
+    <name>ozone.s3g.allow-delete</name>
+    <value>false</value>
+    <tag>OZONE, S3GATEWAY</tag>
+    <description>Whether the S3Gateway accepts DELETE as an exception in readonly mode.
+      Only effective in readonly mode.</description>
+  </property>
+
+  <property>
     <name>ozone.om.save.metrics.interval</name>
     <value>5m</value>
     <tag>OZONE, OM</tag>

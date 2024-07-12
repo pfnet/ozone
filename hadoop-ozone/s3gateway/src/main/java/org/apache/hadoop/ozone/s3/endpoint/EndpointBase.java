@@ -37,6 +37,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.hdds.conf.ConfigurationSource;
+import org.apache.hadoop.hdds.conf.OzoneConfiguration;
 import org.apache.hadoop.ozone.OzoneConsts;
 import org.apache.hadoop.ozone.audit.AuditAction;
 import org.apache.hadoop.ozone.audit.AuditEventStatus;
@@ -383,14 +385,36 @@ public abstract class EndpointBase implements Auditor {
         || result == ResultCodes.INVALID_TOKEN;
   }
 
-  protected Optional<Response> checkIfReadonly() {
+  /**
+   * Boolean logic combination behaviour
+   *  | (READONLY, ALLOW_DELETE) | (F, _) | (T, F) | (T, T) |
+   *  +--------------------------+--------+--------+--------+
+   *  | PUT,POST                 | ok(a)  | fail(d)| fail(g)|
+   *  | GET,HEAD                 | ok(b)  | ok(e)  | ok(h)  |
+   *  | DELETE                   | ok(c)  | fail(f)| ok(i)  |
+   *
+   * Maybe we shall rename the method?
+   *
+   * @param isDeletion
+   * @return
+   */
+  protected Optional<Response> checkIfReadonly(boolean isDeletion) {
     // Check if the S3Gateway is in read-only mode or not.
-    if (getClient().getConfiguration().getBoolean(
+    ConfigurationSource conf = getClient().getConfiguration();
+    if (conf.getBoolean(
         S3GatewayConfigKeys.OZONE_S3G_READONLY,
         S3GatewayConfigKeys.OZONE_S3G_READONLY_DEFAULT)) {
+      if (isDeletion && conf.getBoolean(
+              S3GatewayConfigKeys.OZONE_S3G_ALLOW_DELETE,
+              S3GatewayConfigKeys.OZONE_S3G_ALLOW_DELETE_DEFAULT)) {
+        // case (i)
+        return Optional.empty();
+      }
+      // case (d, e, f, g, h)
       return Optional.of(Response.status(HttpStatus.SC_METHOD_NOT_ALLOWED).
           header("Allow", "GET,HEAD").build());
     }
+    // case (a, b, c)
     return Optional.empty();
   }
 }
