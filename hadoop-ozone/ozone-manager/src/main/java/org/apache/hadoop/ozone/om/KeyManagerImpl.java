@@ -1114,17 +1114,18 @@ public class KeyManagerImpl implements KeyManager {
     if (ozoneFileStatus.isDirectory() && hasAccess) {
       directories.add(ozoneFileStatus);
     }
+    long keys_scanned = 0;
     while (!directories.isEmpty() && hasAccess) {
-      if (directories.size() >
-              ozoneManager.getConfiguration()
-                      .getInt(OZONE_OM_ACL_CHECK_MAX_CHILDREN, 300)) {
-        throw new OMException("Too much entries for ACL check", TIMEOUT);
-      }
       ozoneFileStatus = directories.pop();
       String keyPath = ozoneFileStatus.getTrimmedName();
       Iterator<? extends OzoneFileStatus> children =
           ozObject.getOzonePrefixPathViewer().getChildren(keyPath);
       while (hasAccess && children.hasNext()) {
+        if (keys_scanned >
+                ozoneManager.getConfiguration()
+                        .getInt(OZONE_OM_ACL_CHECK_MAX_CHILDREN, 1_000_000)) {
+          throw new OMException("Too much entries for ACL check", TIMEOUT);
+        }
         ozoneFileStatus = children.next();
         keyInfo = ozoneFileStatus.getKeyInfo();
         hasAccess = OzoneAclUtil.checkAclRights(keyInfo.getAcls(), context);
@@ -1135,6 +1136,7 @@ public class KeyManagerImpl implements KeyManager {
         if (hasAccess && ozoneFileStatus.isDirectory()) {
           directories.add(ozoneFileStatus);
         }
+        keys_scanned += 1;
       }
     }
     return hasAccess;
