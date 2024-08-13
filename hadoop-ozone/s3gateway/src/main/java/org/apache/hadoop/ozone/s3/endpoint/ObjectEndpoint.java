@@ -177,7 +177,7 @@ public class ObjectEndpoint extends EndpointBase {
       InputStream body) throws IOException, OS3Exception {
 
     // Check if the S3Gateway status is readonly
-    Optional<Response> checkResult = checkIfReadonly();
+    Optional<Response> checkResult = checkIfReadonly(false);
     if (checkResult.isPresent()) {
       return checkResult.get();
     }
@@ -535,7 +535,7 @@ public class ObjectEndpoint extends EndpointBase {
       IOException, OS3Exception {
 
     // Check if the S3Gateway status is readonly
-    Optional<Response> checkResult = checkIfReadonly();
+    Optional<Response> checkResult = checkIfReadonly(true);
     if (checkResult.isPresent()) {
       return checkResult.get();
     }
@@ -606,7 +606,7 @@ public class ObjectEndpoint extends EndpointBase {
       throws IOException, OS3Exception {
 
     // Check if the S3Gateway status is readonly
-    Optional<Response> checkResult = checkIfReadonly();
+    Optional<Response> checkResult = checkIfReadonly(false);
     if (checkResult.isPresent()) {
       return checkResult.get();
     }
@@ -680,7 +680,7 @@ public class ObjectEndpoint extends EndpointBase {
       throws IOException, OS3Exception {
 
     // Check if the S3Gateway status is readonly
-    Optional<Response> checkResult = checkIfReadonly();
+    Optional<Response> checkResult = checkIfReadonly(false);
     if (checkResult.isPresent()) {
       return checkResult.get();
     }

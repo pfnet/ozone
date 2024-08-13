@@ -42,6 +42,8 @@ import static org.apache.hadoop.ozone.conf.OzoneServiceConfig.DEFAULT_SHUTDOWN_H
 import static org.apache.hadoop.ozone.s3.S3GatewayConfigKeys.OZONE_S3G_KERBEROS_KEYTAB_FILE_KEY;
 import static org.apache.hadoop.ozone.s3.S3GatewayConfigKeys.OZONE_S3G_KERBEROS_PRINCIPAL_KEY;
 import static org.apache.hadoop.ozone.s3.S3GatewayConfigKeys.OZONE_S3G_READONLY;
+import static org.apache.hadoop.ozone.s3.S3GatewayConfigKeys.OZONE_S3G_ALLOW_DELETE;
+
 
 /**
  * This class is used to start/stop S3 compatible rest server.
@@ -95,6 +97,8 @@ public class Gateway extends GenericCli {
     HddsServerUtil.initializeMetrics(ozoneConfiguration, "S3Gateway");
     LOG.info("S3 Gateway Readonly mode: {}={}", OZONE_S3G_READONLY,
             ozoneConfiguration.get(OZONE_S3G_READONLY));
+    LOG.info("S3 Gateway allow-delete: {}={}", OZONE_S3G_ALLOW_DELETE,
+            ozoneConfiguration.get(OZONE_S3G_ALLOW_DELETE));
     httpServer.start();
   }
 

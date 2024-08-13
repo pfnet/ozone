@@ -66,6 +66,9 @@ public final class S3GatewayConfigKeys {
 
   public static final String OZONE_S3G_READONLY = "ozone.s3g.readonly";
   public static final boolean OZONE_S3G_READONLY_DEFAULT = false;
+
+  public static final String OZONE_S3G_ALLOW_DELETE = "ozone.s3g.allow-delete";
+  public static final boolean OZONE_S3G_ALLOW_DELETE_DEFAULT = false;
   /**
    * Never constructed.
    */

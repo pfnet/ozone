@@ -116,6 +116,7 @@ import static org.apache.hadoop.ozone.OzoneConfigKeys.OZONE_SCM_BLOCK_SIZE_DEFAU
 import static org.apache.hadoop.ozone.OzoneConsts.OZONE_URI_DELIMITER;
 import static org.apache.hadoop.ozone.om.OMConfigKeys.OZONE_DIR_DELETING_SERVICE_INTERVAL;
 import static org.apache.hadoop.ozone.om.OMConfigKeys.OZONE_DIR_DELETING_SERVICE_INTERVAL_DEFAULT;
+import static org.apache.hadoop.ozone.om.OMConfigKeys.OZONE_OM_ACL_CHECK_MAX_CHILDREN;
 import static org.apache.hadoop.ozone.om.OMConfigKeys.OZONE_OM_OPEN_KEY_CLEANUP_SERVICE_INTERVAL;
 import static org.apache.hadoop.ozone.om.OMConfigKeys.OZONE_OM_OPEN_KEY_CLEANUP_SERVICE_INTERVAL_DEFAULT;
 import static org.apache.hadoop.ozone.om.OMConfigKeys.OZONE_OM_OPEN_KEY_CLEANUP_SERVICE_TIMEOUT;
@@ -128,6 +129,7 @@ import static org.apache.hadoop.ozone.om.exceptions.OMException.ResultCodes.INVA
 import static org.apache.hadoop.ozone.om.exceptions.OMException.ResultCodes.KEY_NOT_FOUND;
 import static org.apache.hadoop.ozone.om.exceptions.OMException.ResultCodes.SCM_GET_PIPELINE_EXCEPTION;
 import static org.apache.hadoop.ozone.om.exceptions.OMException.ResultCodes.VOLUME_NOT_FOUND;
+import static org.apache.hadoop.ozone.om.exceptions.OMException.ResultCodes.TIMEOUT;
 import static org.apache.hadoop.util.MetricUtil.captureLatencyNs;
 import static org.apache.hadoop.ozone.om.lock.OzoneManagerLock.Resource.BUCKET_LOCK;
 import static org.apache.hadoop.ozone.security.acl.OzoneObj.ResourceType.KEY;
@@ -1112,12 +1114,18 @@ public class KeyManagerImpl implements KeyManager {
     if (ozoneFileStatus.isDirectory() && hasAccess) {
       directories.add(ozoneFileStatus);
     }
+    long keys_scanned = 0;
     while (!directories.isEmpty() && hasAccess) {
       ozoneFileStatus = directories.pop();
       String keyPath = ozoneFileStatus.getTrimmedName();
       Iterator<? extends OzoneFileStatus> children =
           ozObject.getOzonePrefixPathViewer().getChildren(keyPath);
       while (hasAccess && children.hasNext()) {
+        if (keys_scanned >
+                ozoneManager.getConfiguration()
+                        .getInt(OZONE_OM_ACL_CHECK_MAX_CHILDREN, 1_000_000)) {
+          throw new OMException("Too much entries for ACL check", TIMEOUT);
+        }
         ozoneFileStatus = children.next();
         keyInfo = ozoneFileStatus.getKeyInfo();
         hasAccess = OzoneAclUtil.checkAclRights(keyInfo.getAcls(), context);
@@ -1128,6 +1136,7 @@ public class KeyManagerImpl implements KeyManager {
         if (hasAccess && ozoneFileStatus.isDirectory()) {
           directories.add(ozoneFileStatus);
         }
+        keys_scanned += 1;
       }
     }
     return hasAccess;

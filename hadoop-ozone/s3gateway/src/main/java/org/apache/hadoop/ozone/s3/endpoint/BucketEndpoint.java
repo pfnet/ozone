@@ -246,7 +246,7 @@ public class BucketEndpoint extends EndpointBase {
     S3GAction s3GAction = S3GAction.CREATE_BUCKET;
 
     // Check if the S3Gateway status is readonly
-    Optional<Response> checkResult = checkIfReadonly();
+    Optional<Response> checkResult = checkIfReadonly(false);
     if (checkResult.isPresent()) {
       return checkResult.get();
     }
@@ -356,7 +356,7 @@ public class BucketEndpoint extends EndpointBase {
     S3GAction s3GAction = S3GAction.DELETE_BUCKET;
 
     // Check if the S3Gateway status is readonly
-    Optional<Response> checkResult = checkIfReadonly();
+    Optional<Response> checkResult = checkIfReadonly(true);
     if (checkResult.isPresent()) {
       return checkResult.get();
     }
@@ -407,7 +407,7 @@ public class BucketEndpoint extends EndpointBase {
     MultiDeleteResponse result = new MultiDeleteResponse();
 
     // Check if the S3Gateway status is readonly
-    Optional<Response> checkResult = checkIfReadonly();
+    Optional<Response> checkResult = checkIfReadonly(true);
     if (checkResult.isPresent()) {
       Response res = checkResult.get();
       result.addError(new Error("", res.getStatusInfo().getReasonPhrase(),
