@@ -49,6 +49,10 @@ public class AddAclKeyHandler extends AclHandler {
   @CommandLine.Mixin
   private PrefixUri prefix;
 
+  @CommandLine.Option(names = {"--cooldown-time"}, defaultValue = "10",
+          description = "cooldown time to issue API call in milliseconds")
+  private int cooldownTime;
+
   @Override
   protected OzoneAddress getAddress() {
     return address.getValue();
@@ -115,7 +119,7 @@ public class AddAclKeyHandler extends AclHandler {
         }
         // We introduce this wait to avoid data corruption
         try {
-          Thread.sleep(10);
+          Thread.sleep(cooldownTime);
         } catch (InterruptedException e) {
           throw new RuntimeException("interrupted");
         }
