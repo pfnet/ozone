@@ -31,6 +31,7 @@ import picocli.CommandLine;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 /**
  * Add ACL to key.
@@ -64,25 +65,61 @@ public class AddAclKeyHandler extends AclHandler {
       Iterator<? extends OzoneKey> keyIter =
           bucket.listKeys(obj.getPrefixName(),
               "", prevKey);
+      class Key {
+        public String bucketName;
+        public String volumeName;
+        public String keyName;
+        Key(String volumeName, String bucketName, String keyName) {
+          this.volumeName = volumeName;
+          this.bucketName = bucketName;
+          this.keyName = keyName;
+        }
+      }
+      // Prepare a target key list
+      long nTargetKeys = 0;
+      LinkedList<Key> targetKeys = new LinkedList<>();
+      while (keyIter.hasNext()) {
+        OzoneKey next = keyIter.next();
+        targetKeys.add(new Key(
+                next.getVolumeName(),
+                next.getBucketName(),
+                next.getName()));
+        nTargetKeys += 1;
+      }
       long startAt = System.nanoTime();
       long success = 0;
       long error = 0;
-      while (keyIter.hasNext()) {
-        OzoneKey next = keyIter.next();
+      long nCompletedKeys = 0;
+      for (Key targetKey : targetKeys) {
         OzoneObj ozoneObj = OzoneObjInfo.Builder.newBuilder()
-            .setBucketName(next.getBucketName())
-            .setVolumeName(next.getVolumeName())
-            .setKeyName(next.getName())
+            .setBucketName(targetKey.bucketName)
+            .setVolumeName(targetKey.volumeName)
+            .setKeyName(targetKey.keyName)
             .setResType(OzoneObj.ResourceType.KEY)
             .setStoreType(OzoneObj.StoreType.OZONE)
             .build();
         try {
           acls.addTo(ozoneObj, client.getObjectStore(), out());
+          success += 1;
         } catch (IOException e) {
-          out().printf("%s: %s", next.getName(), e.getMessage());
+          err().printf("%s: %s", targetKey.keyName, e.getMessage());
           error += 1;
         }
-        success += 1;
+        // Show progress
+        if (nCompletedKeys % 100 == 0) {
+          long elapsed = System.nanoTime() - startAt;
+          long remainKeys = nTargetKeys - nCompletedKeys;
+          out().printf("%d of %d keys completed. %d keys to go. (ETA: %f hours)\n",
+                  nCompletedKeys, nTargetKeys, remainKeys,
+                  remainKeys * ((double)elapsed/nCompletedKeys)/(1000*1000*1000)/(60*60));
+        }
+        // We introduce this wait to avoid data corruption
+        try {
+          Thread.sleep(10);
+        } catch (InterruptedException e) {
+          throw new RuntimeException("interrupted");
+        }
+        nCompletedKeys += 1;
       }
       out().printf("%d key changes completed (%d errors) in %d seconds.\n", success, error,
               (System.nanoTime() - startAt) / 1000 / 1000 / 1000);
