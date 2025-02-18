@@ -678,8 +678,8 @@ public class TestOzoneClientMultipartUploadWithFSO {
         metadataMgr.getOpenKeyTable(bucketLayout).get(multipartOpenKey);
     OmMultipartKeyInfo omMultipartKeyInfo =
         metadataMgr.getMultipartInfoTable().get(multipartKey);
-    assertNull(omKeyInfo);
-    assertNull(omMultipartKeyInfo);
+    Assert.assertNull(omKeyInfo);
+    Assert.assertNull(omMultipartKeyInfo);
   }
 
   private void verifyPartNamesInDB(Map<Integer, String> partsMap,
