@@ -72,6 +72,7 @@ public class ClosingContainerHandler extends AbstractCheck {
 
     // TODO - review this logic - may need an empty check here
     if (request.getContainerReplicas().isEmpty()) {
+      LOG.info("Container {} is missing.", containerInfo.containerID());
       request.getReport().incrementAndSample(
           ReplicationManagerReport.HealthState.MISSING,
           containerInfo.containerID());

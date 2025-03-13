@@ -114,6 +114,7 @@ public class RatisReplicationCheckHandler extends AbstractCheck {
       if (underHealth.isUnrecoverable()) {
         report.incrementAndSample(ReplicationManagerReport.HealthState.MISSING,
             container.containerID());
+        LOG.info("Container {} is missing.", container.containerID());
         return true;
       }
       report.incrementAndSample(

@@ -1840,6 +1840,7 @@ public class LegacyReplicationManager {
                                         ContainerInfo container,
                                         ReplicationManagerReport report) {
     if (replicas.size() == 0) {
+      LOG.info("Container {} is missing.", container.containerID());
       report.incrementAndSample(HealthState.MISSING, container.containerID());
       report.incrementAndSample(HealthState.UNDER_REPLICATED,
               container.containerID());

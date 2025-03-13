@@ -65,6 +65,7 @@ public class ECReplicationCheckHandler extends AbstractCheck {
           = ((ContainerHealthResult.UnderReplicatedHealthResult) health);
       if (underHealth.isUnrecoverable()) {
         if (underHealth.isMissing()) {
+          LOG.info("Container {} is missing.", containerID);
           report.incrementAndSample(
               ReplicationManagerReport.HealthState.MISSING, containerID);
         } else {
