@@ -50,7 +50,6 @@ public class OzoneClientProducer {
   @Produces
   public synchronized OzoneClient createClient() throws WebApplicationException,
       IOException {
-    ozoneConfiguration.set("ozone.om.group.rights", "NONE");
     client = getClient(ozoneConfiguration);
     return client;
   }
