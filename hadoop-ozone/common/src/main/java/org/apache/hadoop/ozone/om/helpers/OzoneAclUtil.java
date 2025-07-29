@@ -21,6 +21,7 @@ import static org.apache.hadoop.ozone.OzoneAcl.AclScope.ACCESS;
 import static org.apache.hadoop.ozone.OzoneAcl.AclScope.DEFAULT;
 import static org.apache.hadoop.ozone.security.acl.IAccessAuthorizer.ACLIdentityType.GROUP;
 import static org.apache.hadoop.ozone.security.acl.IAccessAuthorizer.ACLIdentityType.USER;
+import static org.apache.hadoop.ozone.security.acl.IAccessAuthorizer.ACLIdentityType.WORLD;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -76,6 +77,8 @@ public final class OzoneAclUtil {
       // do nothing, since user has the permission, user can add ACL for selected groups later.
       LOG.warn("Failed to get primary group from user {}", ugi);
     }
+    // Add a default right
+    listOfAcls.add(new OzoneAcl(WORLD, "", DEFAULT, ACLType.ALL));
     return listOfAcls;
   }
 
