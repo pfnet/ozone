@@ -22,6 +22,7 @@ import static org.apache.hadoop.ozone.OzoneAcl.AclScope.ACCESS;
 import static org.apache.hadoop.ozone.OzoneAcl.AclScope.DEFAULT;
 import static org.apache.hadoop.ozone.security.acl.IAccessAuthorizer.ACLIdentityType.GROUP;
 import static org.apache.hadoop.ozone.security.acl.IAccessAuthorizer.ACLIdentityType.USER;
+import static org.apache.hadoop.ozone.security.acl.IAccessAuthorizer.ACLIdentityType.WORLD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -225,5 +226,15 @@ public class TestOzoneAclUtil {
     assertNotEquals(ozoneAcls.get(0).getAclScope(),
         ozoneAcls.get(1).getAclScope());
     assertEquals(ozoneAcls.get(0).getAclByteString(), ozoneAcls.get(1).getAclByteString());
+  }
+
+  @Test
+  public void testDefaultAclListContainsWorldDefaultAll() {
+    UserGroupInformation ugi = UserGroupInformation.createUserForTesting(
+        "test-user", new String[]{"test-group"});
+    OzoneAcl expected = OzoneAcl.of(WORLD, "", DEFAULT, ACLType.ALL);
+
+    assertTrue(OzoneAclUtil.getDefaultAclList(
+        ugi, newInstanceOf(OmConfig.class)).contains(expected));
   }
 }
