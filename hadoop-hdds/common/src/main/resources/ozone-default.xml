@@ -692,7 +692,7 @@
     <value>0</value>
     <tag>OZONE, OM, PERFORMANCE</tag>
     <description>
-      Rate limit in listKeys in seconds. listKeys operation in OM is
+      Rate limit for listKeys in requests per second. listKeys operation in OM is
       relatively a heavy operation, especially in case many keys in a bucket
       or in a prefix.
 
@@ -705,7 +705,7 @@
     <value>8</value>
     <tag>OZONE, OM, PERFORMANCE</tag>
     <description>
-      The duration of a wait time in seconds when a client try to enter the
+      The maximum wait in seconds when a client tries to enter the
       rate-limited section of listKeys operation.
 
       The shorter this is, the less the OM gets loaded. The longer this
@@ -718,7 +718,7 @@
     <value>0</value>
     <tag>OZONE, OM, PERFORMANCE</tag>
     <description>
-      Rate limit in listStatus in seconds. listStatus operation in OM is
+      Rate limit for listStatus in requests per second. listStatus operation in OM is
       relatively a heavy operation, especially in case many keys in a bucket
       or in a prefix.
 
@@ -731,7 +731,7 @@
     <value>8</value>
     <tag>OZONE, OM, PERFORMANCE</tag>
     <description>
-      The duration of a wait time in seconds when a client try to enter the
+      The maximum wait in seconds when a client tries to enter the
       rate-limited section of listStatus operation.
 
       The shorter this is, the less the OM gets loaded. The longer this
