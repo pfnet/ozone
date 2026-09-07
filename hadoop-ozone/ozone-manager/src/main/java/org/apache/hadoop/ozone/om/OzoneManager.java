@@ -413,8 +413,7 @@ public final class OzoneManager extends ServiceRuntimeInfoImpl
   private PrefixManagerImpl prefixManager;
   private final UpgradeFinalizer<OzoneManager> upgradeFinalizer;
   private ExecutorService edekCacheLoader = null;
-  private OMRequestRateLimiter listKeysRateLimiter;
-  private OMRequestRateLimiter listStatusRateLimiter;
+  private OMReadRequestThrottler readRequestThrottler;
 
   /**
    * OM super user / admin list.
@@ -602,18 +601,8 @@ public final class OzoneManager extends ServiceRuntimeInfoImpl
     this.grpcBlockTokenEnabled = conf.getBoolean(HDDS_BLOCK_TOKEN_ENABLED,
         HDDS_BLOCK_TOKEN_ENABLED_DEFAULT);
 
-    listKeysRateLimiter = OMRequestRateLimiter.fromConfiguration(
-        configuration, "listKeys",
-        OMConfigKeys.OZONE_OM_LISTKEYS_RATELIMIT_KEY,
-        OMConfigKeys.OZONE_OM_LISTKEYS_RATELIMIT_DEFAULT,
-        OMConfigKeys.OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_KEY,
-        OMConfigKeys.OZONE_OM_LISTKEYS_RATELIMIT_TIMEOUT_DEFAULT);
-    listStatusRateLimiter = OMRequestRateLimiter.fromConfiguration(
-        configuration, "listStatus",
-        OMConfigKeys.OZONE_OM_LISTSTATUS_RATELIMIT_KEY,
-        OMConfigKeys.OZONE_OM_LISTSTATUS_RATELIMIT_DEFAULT,
-        OMConfigKeys.OZONE_OM_LISTSTATUS_RATELIMIT_TIMEOUT_KEY,
-        OMConfigKeys.OZONE_OM_LISTSTATUS_RATELIMIT_TIMEOUT_DEFAULT);
+    readRequestThrottler =
+        OMReadRequestThrottler.fromConfiguration(configuration);
 
     this.isStrictS3 = conf.getBoolean(
         OZONE_OM_NAMESPACE_STRICT_S3,
@@ -1840,6 +1829,10 @@ public final class OzoneManager extends ServiceRuntimeInfoImpl
 
   public OMPerformanceMetrics getPerfMetrics() {
     return perfMetrics;
+  }
+
+  public OMReadRequestThrottler getReadRequestThrottler() {
+    return readRequestThrottler;
   }
 
   public DeletingServiceMetrics getDeletionMetrics() {
@@ -3128,7 +3121,6 @@ public final class OzoneManager extends ServiceRuntimeInfoImpl
   public ListKeysResult listKeys(String volumeName, String bucketName,
                                  String startKey, String keyPrefix, int maxKeys)
       throws IOException {
-    listKeysRateLimiter.acquire();
     try (UncheckedAutoCloseableSupplier<IOmMetadataReader> rcReader =
              getReader(volumeName, bucketName, keyPrefix)) {
       return rcReader.get().listKeys(
@@ -4075,8 +4067,6 @@ public final class OzoneManager extends ServiceRuntimeInfoImpl
   public List<OzoneFileStatus> listStatus(OmKeyArgs args, boolean recursive,
       String startKey, long numEntries, boolean allowPartialPrefixes)
       throws IOException {
-    listStatusRateLimiter.acquire();
-
     try (UncheckedAutoCloseableSupplier<IOmMetadataReader> rcReader =
         getReader(args)) {
       return rcReader.get().listStatus(

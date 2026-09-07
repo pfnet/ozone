@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.hdds.server.OzoneProtocolMessageDispatcher;
 import org.apache.hadoop.hdds.utils.ProtocolMessageMetrics;
 import org.apache.hadoop.ipc_.ProcessingDetails.Timing;
+import org.apache.hadoop.ipc_.RetriableException;
 import org.apache.hadoop.ipc_.Server;
 import org.apache.hadoop.ozone.OmUtils;
 import org.apache.hadoop.ozone.om.OMPerformanceMetrics;
@@ -220,6 +221,17 @@ public class OzoneManagerProtocolServerSideTranslatorPB implements OzoneManagerP
 
   private OMResponse submitReadRequestToOM(OMRequest request)
       throws ServiceException {
+    // Rate limit expensive list requests here, before dispatch. Raised any
+    // deeper the RetriableException is caught as an IOException by
+    // OzoneManagerRequestHandler#handleReadRequest and flattened into
+    // INTERNAL_ERROR in the response body, which erases the type and leaves
+    // the client unable to distinguish throttling from a real failure.
+    try {
+      ozoneManager.getReadRequestThrottler().acquire(request.getCmdType());
+    } catch (RetriableException e) {
+      throw new ServiceException(e);
+    }
+
     if (request.getCmdType().equals(PrepareStatus)) {
       // PrepareStatus is an OM request that only target a single OM node.
       // Therefore, all PrepareStatus requests should be served immediately without failover regardless
