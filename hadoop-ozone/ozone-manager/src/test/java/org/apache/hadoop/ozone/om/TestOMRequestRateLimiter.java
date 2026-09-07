@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.stream.Stream;
 import org.apache.hadoop.hdds.conf.OzoneConfiguration;
-import org.apache.hadoop.ipc_.RetriableException;
+import org.apache.hadoop.ozone.om.exceptions.OMRateLimitExceededException;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -73,7 +73,7 @@ class TestOMRequestRateLimiter {
         timeoutKey, defaultTimeout);
 
     assertDoesNotThrow(limiter::acquire);
-    assertThrows(RetriableException.class, limiter::acquire);
+    assertThrows(OMRateLimitExceededException.class, limiter::acquire);
   }
 
   @ParameterizedTest

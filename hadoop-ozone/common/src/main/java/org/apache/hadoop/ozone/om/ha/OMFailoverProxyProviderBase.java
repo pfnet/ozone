@@ -42,6 +42,7 @@ import org.apache.hadoop.ozone.OzoneConfigKeys;
 import org.apache.hadoop.ozone.om.exceptions.OMException;
 import org.apache.hadoop.ozone.om.exceptions.OMLeaderNotReadyException;
 import org.apache.hadoop.ozone.om.exceptions.OMNotLeaderException;
+import org.apache.hadoop.ozone.om.exceptions.OMRateLimitExceededException;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.SecretManager;
@@ -145,6 +146,16 @@ public abstract class OMFailoverProxyProviderBase<T> implements
 
   protected synchronized boolean shouldFailover(Exception ex) {
     Throwable unwrappedException = HddsUtils.getUnwrappedException(ex);
+    if (OMRateLimitExceededException.isRateLimitExceeded(ex)
+        || unwrappedException instanceof OMRateLimitExceededException) {
+      // The OM refused this request because its rate limit is exhausted.
+      // Retrying here would park the calling thread -- in the S3 Gateway that
+      // is a Jetty worker serving one HTTP request -- while still offering the
+      // OM the same request rate, so it starves unrelated requests without
+      // reducing load. Surface it instead and let the caller translate it into
+      // a 503 SlowDown so the real client backs off.
+      return false;
+    }
     if (unwrappedException instanceof AccessControlException ||
         unwrappedException instanceof SecretManager.InvalidToken) {
       // Retry all available OMs once before failing with

@@ -53,6 +53,7 @@ import org.apache.hadoop.ozone.client.OzoneBucket;
 import org.apache.hadoop.ozone.client.OzoneKey;
 import org.apache.hadoop.ozone.om.exceptions.OMException;
 import org.apache.hadoop.ozone.om.exceptions.OMException.ResultCodes;
+import org.apache.hadoop.ozone.om.exceptions.OMRateLimitExceededException;
 import org.apache.hadoop.ozone.om.helpers.ErrorInfo;
 import org.apache.hadoop.ozone.s3.commontypes.EncodingTypeObject;
 import org.apache.hadoop.ozone.s3.commontypes.KeyMetadata;
@@ -99,6 +100,16 @@ public class BucketEndpoint extends BucketOperationHandler {
       return handler.handleGetRequest(context, bucketName);
     } catch (OMException ex) {
       throw newError(bucketName, ex);
+    } catch (RuntimeException ex) {
+      // The key listing runs outside the try that handles OMException, and
+      // OzoneBucket.KeyIterator#hasNext rethrows the OM's refusal wrapped in a
+      // RuntimeException. Translate a rate limit refusal into 503 SlowDown so
+      // the S3 client backs off -- botocore treats it as throttling and retries
+      // with exponential backoff. Anything else is a real fault; leave it be.
+      if (OMRateLimitExceededException.isRateLimitExceeded(ex)) {
+        throw newError(S3ErrorTable.SLOW_DOWN, bucketName, ex);
+      }
+      throw ex;
     }
   }
 

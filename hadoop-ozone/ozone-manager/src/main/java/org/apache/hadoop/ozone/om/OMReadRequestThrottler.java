@@ -23,7 +23,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
 import org.apache.hadoop.hdds.conf.ConfigurationSource;
-import org.apache.hadoop.ipc_.RetriableException;
+import org.apache.hadoop.ozone.om.exceptions.OMRateLimitExceededException;
 import org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos.Type;
 
 /**
@@ -36,7 +36,7 @@ import org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos.Type;
  * {@code OzoneManagerRequestHandler#handleReadRequest} wraps its whole dispatch
  * switch in {@code catch (IOException)} and maps anything that is not an
  * {@code OMException} to {@code Status.INTERNAL_ERROR} in the response body.
- * {@link RetriableException} extends {@code IOException}, so a permit failure
+ * {@link OMRateLimitExceededException} extends {@code IOException}, so a permit failure
  * raised below that point loses its type and reaches the client as a plain
  * INTERNAL_ERROR that no retry policy can act on. Raised above the dispatcher
  * it propagates as a {@code ServiceException}, keeps its class name on the
@@ -92,10 +92,11 @@ public final class OMReadRequestThrottler {
    * Acquires a permit for the given request type. Request types that are not
    * rate limited pass through untouched.
    *
-   * @throws RetriableException if no permit is available within the configured
-   *     timeout. The caller is expected to let this reach the RPC layer.
+   * @throws OMRateLimitExceededException if no permit is available within the
+   *     configured timeout. The caller is expected to let this reach the RPC
+   *     layer so the client can turn it into a 503 SlowDown.
    */
-  public void acquire(Type cmdType) throws RetriableException {
+  public void acquire(Type cmdType) throws OMRateLimitExceededException {
     OMRequestRateLimiter limiter = limiters.get(cmdType);
     if (limiter != null) {
       limiter.acquire();

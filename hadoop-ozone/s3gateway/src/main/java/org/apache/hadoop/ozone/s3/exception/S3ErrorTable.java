@@ -24,6 +24,7 @@ import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_NOT_IMPLEMENTED;
 import static java.net.HttpURLConnection.HTTP_PRECON_FAILED;
+import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static org.apache.hadoop.ozone.OzoneConsts.S3_REQUEST_HEADER_METADATA_SIZE_LIMIT_KB;
 import static org.apache.hadoop.ozone.s3.util.S3Consts.RANGE_NOT_SATISFIABLE;
 
@@ -105,6 +106,13 @@ public enum S3ErrorTable {
   INTERNAL_ERROR(
       "InternalError", "We encountered an internal error. Please try again.",
       HTTP_INTERNAL_ERROR),
+
+  /** Returned when the OM refuses a request because a rate limit is exhausted.
+   * botocore classifies SlowDown as throttling and retries it with exponential
+   * backoff, so this pushes backpressure to the client rather than holding an
+   * S3 Gateway worker thread. */
+  SLOW_DOWN(
+      "SlowDown", "Please reduce your request rate.", HTTP_UNAVAILABLE),
 
   ACCESS_DENIED(
       "AccessDenied", "User doesn't have the right to access this " +

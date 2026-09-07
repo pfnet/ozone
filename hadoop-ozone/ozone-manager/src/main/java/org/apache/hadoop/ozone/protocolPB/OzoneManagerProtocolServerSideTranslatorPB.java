@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.hdds.server.OzoneProtocolMessageDispatcher;
 import org.apache.hadoop.hdds.utils.ProtocolMessageMetrics;
 import org.apache.hadoop.ipc_.ProcessingDetails.Timing;
-import org.apache.hadoop.ipc_.RetriableException;
 import org.apache.hadoop.ipc_.Server;
 import org.apache.hadoop.ozone.OmUtils;
 import org.apache.hadoop.ozone.om.OMPerformanceMetrics;
@@ -39,6 +38,7 @@ import org.apache.hadoop.ozone.om.OzoneManager;
 import org.apache.hadoop.ozone.om.exceptions.OMException;
 import org.apache.hadoop.ozone.om.exceptions.OMException.ResultCodes;
 import org.apache.hadoop.ozone.om.exceptions.OMLeaderNotReadyException;
+import org.apache.hadoop.ozone.om.exceptions.OMRateLimitExceededException;
 import org.apache.hadoop.ozone.om.protocolPB.OzoneManagerProtocolPB;
 import org.apache.hadoop.ozone.om.ratis.OzoneManagerRatisServer;
 import org.apache.hadoop.ozone.om.ratis.OzoneManagerRatisServer.RaftServerStatus;
@@ -222,13 +222,13 @@ public class OzoneManagerProtocolServerSideTranslatorPB implements OzoneManagerP
   private OMResponse submitReadRequestToOM(OMRequest request)
       throws ServiceException {
     // Rate limit expensive list requests here, before dispatch. Raised any
-    // deeper the RetriableException is caught as an IOException by
+    // deeper, OMRateLimitExceededException is caught as an IOException by
     // OzoneManagerRequestHandler#handleReadRequest and flattened into
     // INTERNAL_ERROR in the response body, which erases the type and leaves
     // the client unable to distinguish throttling from a real failure.
     try {
       ozoneManager.getReadRequestThrottler().acquire(request.getCmdType());
-    } catch (RetriableException e) {
+    } catch (OMRateLimitExceededException e) {
       throw new ServiceException(e);
     }
 

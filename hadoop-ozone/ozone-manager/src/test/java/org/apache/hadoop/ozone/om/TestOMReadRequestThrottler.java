@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.hadoop.hdds.conf.OzoneConfiguration;
-import org.apache.hadoop.ipc_.RetriableException;
+import org.apache.hadoop.ozone.om.exceptions.OMRateLimitExceededException;
 import org.apache.hadoop.ozone.protocol.proto.OzoneManagerProtocolProtos.Type;
 import org.junit.jupiter.api.Test;
 
@@ -72,7 +72,7 @@ class TestOMReadRequestThrottler {
     OMReadRequestThrottler throttler = throttlerWithSinglePermit();
 
     assertDoesNotThrow(() -> throttler.acquire(Type.ListKeys));
-    assertThrows(RetriableException.class,
+    assertThrows(OMRateLimitExceededException.class,
         () -> throttler.acquire(Type.ListKeysLight));
   }
 
@@ -81,7 +81,7 @@ class TestOMReadRequestThrottler {
     OMReadRequestThrottler throttler = throttlerWithSinglePermit();
 
     assertDoesNotThrow(() -> throttler.acquire(Type.ListStatus));
-    assertThrows(RetriableException.class,
+    assertThrows(OMRateLimitExceededException.class,
         () -> throttler.acquire(Type.ListStatusLight));
   }
 
@@ -90,7 +90,7 @@ class TestOMReadRequestThrottler {
     OMReadRequestThrottler throttler = throttlerWithSinglePermit();
 
     assertDoesNotThrow(() -> throttler.acquire(Type.ListKeys));
-    assertThrows(RetriableException.class,
+    assertThrows(OMRateLimitExceededException.class,
         () -> throttler.acquire(Type.ListKeys));
 
     assertDoesNotThrow(() -> throttler.acquire(Type.ListStatus));
@@ -101,7 +101,7 @@ class TestOMReadRequestThrottler {
     OMReadRequestThrottler throttler = throttlerWithSinglePermit();
 
     assertDoesNotThrow(() -> throttler.acquire(Type.ListKeys));
-    assertThrows(RetriableException.class,
+    assertThrows(OMRateLimitExceededException.class,
         () -> throttler.acquire(Type.ListKeys));
 
     // Exhausting the listKeys budget must not affect anything else.

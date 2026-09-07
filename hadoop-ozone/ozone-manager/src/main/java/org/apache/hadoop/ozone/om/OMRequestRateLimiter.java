@@ -20,7 +20,7 @@ package org.apache.hadoop.ozone.om;
 import com.google.common.util.concurrent.RateLimiter;
 import java.time.Duration;
 import org.apache.hadoop.hdds.conf.ConfigurationSource;
-import org.apache.hadoop.ipc_.RetriableException;
+import org.apache.hadoop.ozone.om.exceptions.OMRateLimitExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,9 +65,9 @@ final class OMRequestRateLimiter {
         operation, RateLimiter.create(permitsPerSecond), timeout);
   }
 
-  void acquire() throws RetriableException {
+  void acquire() throws OMRateLimitExceededException {
     if (rateLimiter != null && !rateLimiter.tryAcquire(timeout)) {
-      throw new RetriableException(
+      throw new OMRateLimitExceededException(
           "Rate limit exceeded for " + operation);
     }
   }
