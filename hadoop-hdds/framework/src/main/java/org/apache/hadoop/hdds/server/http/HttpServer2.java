@@ -87,6 +87,8 @@ import org.apache.hadoop.security.ssl.SSLFactory;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.StringUtils;
+import org.eclipse.jetty.http.HttpCompliance;
+import org.eclipse.jetty.http.HttpComplianceSection;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Connector;
@@ -135,6 +137,39 @@ import org.slf4j.LoggerFactory;
 @InterfaceStability.Evolving
 public final class HttpServer2 implements FilterContainer {
   private static final Logger LOG = LoggerFactory.getLogger(HttpServer2.class);
+
+  /**
+   * The HTTP compliance mode used for every connector created here.
+   *
+   * <p>Jetty's {@code HttpParser.CACHE} is a case-insensitive trie
+   * pre-populated with common Content-Type values -- {@code text/plain},
+   * {@code text/html}, {@code text/xml}, {@code text/json},
+   * {@code application/json} and {@code application/x-www-form-urlencoded},
+   * each crossed with {@code charset=utf-8} and {@code charset=iso-8859-1}.
+   * The lowercase and uppercase spellings collide on the same key, so the
+   * uppercase entry overwrites the lowercase one and every lookup returns the
+   * uppercase spelling.  With {@link HttpComplianceSection#CASE_INSENSITIVE_FIELD_VALUE_CACHE}
+   * enabled the parser substitutes that spelling for whatever was on the wire.
+   *
+   * <p>That silently rewrites a header which S3 clients sign.  A PUT carrying
+   * {@code Content-Type: text/plain; charset=utf-8} reaches the S3 gateway as
+   * {@code charset=UTF-8}, so the SigV4 canonical request the gateway rebuilds
+   * no longer matches what the client signed and the request is rejected as
+   * AccessDenied.  Go clients hit this on a first request, because
+   * {@code mime.TypeByExtension} returns a lowercase charset.  See HDDS-5271.
+   *
+   * <p>Dropping that section re-enables the guard in {@code HttpParser} which
+   * compares the cached value against the bytes on the wire and keeps the wire
+   * bytes whenever they differ.  {@link HttpCompliance#sections()} is
+   * documented as mutable for exactly this purpose; the change applies to
+   * every user of the mode in this class loader, which is what we want.
+   */
+  private static final HttpCompliance HTTP_COMPLIANCE = HttpCompliance.RFC7230;
+
+  static {
+    HTTP_COMPLIANCE.sections()
+        .remove(HttpComplianceSection.CASE_INSENSITIVE_FIELD_VALUE_CACHE);
+  }
 
   public static final String HTTP_SCHEME = "http";
   public static final String HTTPS_SCHEME = "https";
@@ -535,7 +570,8 @@ public final class HttpServer2 implements FilterContainer {
       ServerConnector conn = new ServerConnector(server,
           conf.getInt(HTTP_ACCEPTOR_COUNT_KEY, HTTP_ACCEPTOR_COUNT_DEFAULT),
           conf.getInt(HTTP_SELECTOR_COUNT_KEY, HTTP_SELECTOR_COUNT_DEFAULT));
-      ConnectionFactory connFactory = new HttpConnectionFactory(httpConfig);
+      ConnectionFactory connFactory =
+          new HttpConnectionFactory(httpConfig, HTTP_COMPLIANCE);
       conn.addConnectionFactory(connFactory);
       if (Shell.WINDOWS) {
         // result of setting the SO_REUSEADDR flag is different on Windows
